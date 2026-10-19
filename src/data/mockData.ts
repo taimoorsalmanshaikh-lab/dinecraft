@@ -1,9 +1,9 @@
 import { Restaurant, MenuItem, Deal, Order } from '../types';
 
-export const BURGER_HERO_IMAGE = '/src/assets/images/hero_gourmet_burger_1792181709951.jpg';
-export const PIZZA_IMAGE = '/src/assets/images/food_artisan_pizza_1792181710888.jpg';
-export const BIRYANI_IMAGE = '/src/assets/images/food_pakistani_biryani_1792181711714.jpg';
-export const RESTAURANT_INTERIOR_IMAGE = '/src/assets/images/hero_restaurant_storefront_1792181712458.jpg';
+export const BURGER_HERO_IMAGE = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80';
+export const PIZZA_IMAGE = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80';
+export const BIRYANI_IMAGE = 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=1200&q=80';
+export const RESTAURANT_INTERIOR_IMAGE = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80';
 
 export const DEFAULT_RESTAURANT: Restaurant = {
   id: 'resto_my_restaurant',
