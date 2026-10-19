@@ -382,7 +382,7 @@ export const DEFAULT_DEALS: Deal[] = [
   },
 ];
 
-export const INITIAL_RESTAURANTS: Restaurant[] = [DEFAULT_RESTAURANT];
-export const INITIAL_MENU_ITEMS: MenuItem[] = DEFAULT_MENU_ITEMS;
-export const INITIAL_DEALS: Deal[] = DEFAULT_DEALS;
+export const INITIAL_RESTAURANTS: Restaurant[] = [];
+export const INITIAL_MENU_ITEMS: MenuItem[] = [];
+export const INITIAL_DEALS: Deal[] = [];
 export const INITIAL_ORDERS: Order[] = [];

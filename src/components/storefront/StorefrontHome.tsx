@@ -91,53 +91,8 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       }));
     }
 
-    return [
-      {
-        id: 'deal_combo_1',
-        restaurantId: restaurant.id,
-        title: 'Ultimate Duo Burger & Loaded Fries Combo',
-        description: 'Double Angus beef patties, crisp seasoned waffle fries, and signature dipping sauces.',
-        image: BURGER_HERO_IMAGE,
-        imageUrl: BURGER_HERO_IMAGE,
-        originalPrice: 24.99,
-        discountedPrice: 17.99,
-        active: true,
-      },
-      {
-        id: 'deal_combo_2',
-        restaurantId: restaurant.id,
-        title: 'Artisan Wood-Fired Pizza & Garlic Bites Feast',
-        description: '14-inch stone oven pizza paired with herb-butter garlic knots and refreshing beverages.',
-        image: PIZZA_IMAGE,
-        imageUrl: PIZZA_IMAGE,
-        originalPrice: 29.5,
-        discountedPrice: 21.0,
-        active: true,
-      },
-      {
-        id: 'deal_combo_3',
-        restaurantId: restaurant.id,
-        title: 'Royal Biryani Platter & Kebab Box',
-        description: 'Fragrant basmati rice cooked with saffron, slow-cooked tender meat, and seekh kebabs.',
-        image: BIRYANI_IMAGE,
-        imageUrl: BIRYANI_IMAGE,
-        originalPrice: 32.0,
-        discountedPrice: 23.5,
-        active: true,
-      },
-      {
-        id: 'deal_combo_4',
-        restaurantId: restaurant.id,
-        title: 'Chef Special Evening Dinner Platter',
-        description: 'Generous sharing combo with grilled skewers, artisanal sides, and garden salad.',
-        image: RESTAURANT_INTERIOR_IMAGE,
-        imageUrl: RESTAURANT_INTERIOR_IMAGE,
-        originalPrice: 38.0,
-        discountedPrice: 27.99,
-        active: true,
-      },
-    ];
-  }, [deals, menuItems, restaurant.id]);
+    return [];
+  }, [deals, menuItems]);
 
   // Update scroll arrow state on carousel scroll
   const handleCarouselScroll = () => {
@@ -238,13 +193,15 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
-              <a
-                href="#deals-section"
-                className="sf-button-secondary inline-flex items-center gap-2 px-5 py-3"
-              >
-                <BadgePercent className="w-4 h-4 text-[var(--brand)]" />
-                <span>View Hot Deals</span>
-              </a>
+              {displayDeals.length > 0 && (
+                <a
+                  href="#deals-section"
+                  className="sf-button-secondary inline-flex items-center gap-2 px-5 py-3"
+                >
+                  <BadgePercent className="w-4 h-4 text-[var(--brand)]" />
+                  <span>View Hot Deals</span>
+                </a>
+              )}
             </div>
           </div>
 
@@ -306,7 +263,8 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       </section>
 
       {/* 3. DEALS SECTION (Bento Style Carousel) */}
-      <section id="deals-section" className="space-y-4 sm:space-y-6">
+      {displayDeals.length > 0 && (
+        <section id="deals-section" className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--brand-subtle)] text-[var(--brand)] text-xs font-semibold mb-1.5">
@@ -434,6 +392,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
           </div>
         </div>
       </section>
+      )}
 
       {/* 4. PROMOTIONAL OFFER BANNER: Large Rounded Bento Card */}
       {isPromoEnabled && (

@@ -21,44 +21,59 @@ export const StorefrontController: React.FC = () => {
   const { routeMatch, navigate } = useRouter();
   const { getRestaurantBySlug, fetchRestaurantBySlug, restaurants, activeRestaurant, currentUser } = useDineCraft();
 
-  const slug = routeMatch.restaurantSlug || '';
+  const slug = (routeMatch.restaurantSlug || '').trim().toLowerCase();
   const [asyncResto, setAsyncResto] = React.useState<any>(null);
   const [isFetching, setIsFetching] = React.useState(false);
   const [hasSearched, setHasSearched] = React.useState(false);
 
-  const synchronousResto = getRestaurantBySlug(slug);
+  // Synchronously look up from in-memory restaurants or activeRestaurant
+  const synchronousResto = React.useMemo(() => {
+    if (!slug) return null;
+    return getRestaurantBySlug(slug) || null;
+  }, [slug, getRestaurantBySlug, restaurants, activeRestaurant]);
+
   const restaurant = synchronousResto || asyncResto;
 
   React.useEffect(() => {
-    let isMounted = true;
-    if (slug) {
-      if (synchronousResto) {
-        setHasSearched(true);
-        return;
-      }
-      setIsFetching(true);
-      fetchRestaurantBySlug(slug)
-        .then((found) => {
-          if (isMounted) {
-            if (found) setAsyncResto(found);
-            setHasSearched(true);
-          }
-        })
-        .catch(() => {
-          if (isMounted) setHasSearched(true);
-        })
-        .finally(() => {
-          if (isMounted) setIsFetching(false);
-        });
-    } else {
+    let isCancelled = false;
+
+    if (!slug) {
       setHasSearched(true);
+      setIsFetching(false);
+      return;
     }
+
+    if (synchronousResto) {
+      setHasSearched(true);
+      setIsFetching(false);
+      return;
+    }
+
+    setIsFetching(true);
+    fetchRestaurantBySlug(slug)
+      .then((found) => {
+        if (!isCancelled) {
+          if (found) {
+            setAsyncResto(found);
+          }
+          setHasSearched(true);
+          setIsFetching(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('[StorefrontController] Error fetching restaurant:', err);
+        if (!isCancelled) {
+          setHasSearched(true);
+          setIsFetching(false);
+        }
+      });
+
     return () => {
-      isMounted = false;
+      isCancelled = true;
     };
   }, [slug, synchronousResto, fetchRestaurantBySlug]);
 
-  if (isFetching || (!restaurant && !hasSearched)) {
+  if (isFetching && !restaurant) {
     return (
       <div className="min-h-screen bg-[var(--canvas,#E9EAEE)] flex items-center justify-center p-4">
         <div className="sf-card p-8 max-w-sm w-full text-center space-y-3">

@@ -56,7 +56,77 @@ interface ToastMessage {
   message?: string;
 }
 
-export const BLANK_RESTAURANT: Restaurant = DEFAULT_RESTAURANT;
+export const BLANK_RESTAURANT: Restaurant = {
+  id: '',
+  name: '',
+  slug: '',
+  category: 'Fast Food',
+  description: '',
+  logo: '🍽️',
+  logoUrl: '',
+  banner: '',
+  bannerUrl: '',
+  themeColor: '#FF6900',
+  phone: '',
+  address: '',
+  city: '',
+  openingHours: '',
+  deliveryEnabled: true,
+  pickupEnabled: true,
+  deliveryFee: 0,
+  minimumOrder: 0,
+  websiteStatus: 'published',
+  status: 'published',
+  plan: 'Starter',
+  seoTitle: '',
+  seoDescription: '',
+  heroHeading: '',
+  heroTagline: '',
+  aboutText: '',
+  showDealsPage: false,
+  showFeaturedSection: false,
+  whatsappSupportNumber: '',
+  theme: {
+    primary: '#FF6900',
+    secondary: '#FFF1E6',
+    accent: '#E65F00',
+    background: '#F9FAFB',
+    textColor: '#172033',
+    headingFont: 'Plus Jakarta Sans',
+    scriptFont: 'Dancing Script',
+    bodyFont: 'Inter',
+    buttonStyle: 'pill',
+  },
+  ordering: {
+    deliveryEnabled: true,
+    pickupEnabled: true,
+    deliveryFee: 0,
+    minimumOrder: 0,
+    acceptingOrders: true,
+    prepTimeMins: 20,
+    currency: '$',
+  },
+  contact: {
+    phone: '',
+    whatsapp: '',
+    email: '',
+    address: '',
+    city: '',
+    openingHours: '',
+  },
+  sections: {
+    features: false,
+    favorites: false,
+    deals: false,
+    reservationBanner: false,
+    stats: false,
+    about: false,
+    reviews: false,
+  },
+  content: {
+    footerText: '',
+  },
+};
 
 interface DineCraftContextType {
   // Authentication & Profile
@@ -160,7 +230,7 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch {
       // Ignore
     }
-    return DEFAULT_RESTAURANT.id;
+    return '';
   });
 
   // Menu items & deals
@@ -244,26 +314,25 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         try {
           const userRestos = await getOwnerRestaurants(user.uid);
-          const available = userRestos.length > 0 ? userRestos : getStoredRestaurants();
-          setRestaurants(available.length > 0 ? available : [DEFAULT_RESTAURANT]);
+          setRestaurants(userRestos);
           const savedId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID);
-          const validSaved = available.some((r) => r.id === savedId);
-          setActiveRestaurantIdState(validSaved ? (savedId as string) : (available[0]?.id || DEFAULT_RESTAURANT.id));
+          const validSaved = userRestos.some((r) => r.id === savedId);
+          if (validSaved && savedId) {
+            setActiveRestaurantIdState(savedId);
+          } else if (userRestos.length > 0) {
+            setActiveRestaurantIdState(userRestos[0].id);
+          } else {
+            setActiveRestaurantIdState('');
+          }
         } catch (e) {
           console.warn('Failed to load restaurants:', e);
-          const stored = getStoredRestaurants();
-          setRestaurants(stored.length > 0 ? stored : [DEFAULT_RESTAURANT]);
-          setActiveRestaurantIdState(DEFAULT_RESTAURANT.id);
+          setRestaurants([]);
+          setActiveRestaurantIdState('');
         }
       } else {
         setUserProfile(null);
-        const stored = getStoredRestaurants();
-        setRestaurants(stored);
-        if (stored.length > 0) {
-          const savedId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID);
-          const validSaved = stored.some((r) => r.id === savedId);
-          setActiveRestaurantIdState(validSaved ? (savedId as string) : stored[0].id);
-        }
+        setRestaurants([]);
+        setActiveRestaurantIdState('');
         setOrders([]);
       }
       setIsAuthLoading(false);
@@ -434,25 +503,6 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       await saveRestoService(newResto);
 
-      // Seed starter menu items and deals for the new restaurant in Supabase
-      const defaultItems = INITIAL_MENU_ITEMS.map((item, idx) => ({
-        ...item,
-        id: `item_${newResto.id}_${idx + 1}`,
-        restaurantId: newResto.id,
-      }));
-      for (const item of defaultItems) {
-        await saveMenuItemService(item).catch(() => {});
-      }
-
-      const defaultDeals = INITIAL_DEALS.map((deal, idx) => ({
-        ...deal,
-        id: `deal_${newResto.id}_${idx + 1}`,
-        restaurantId: newResto.id,
-      }));
-      for (const deal of defaultDeals) {
-        await saveDealService(deal).catch(() => {});
-      }
-
       setRestaurants((prev) => [newResto, ...prev]);
       setActiveRestaurantId(newResto.id);
 
@@ -573,25 +623,6 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       await saveRestoService(fullRestaurant);
 
-      // Seed starter menu items and deals
-      const defaultItems = INITIAL_MENU_ITEMS.map((item, idx) => ({
-        ...item,
-        id: `item_${fullRestaurant.id}_${idx + 1}`,
-        restaurantId: fullRestaurant.id,
-      }));
-      for (const item of defaultItems) {
-        await saveMenuItemService(item).catch(() => {});
-      }
-
-      const defaultDeals = INITIAL_DEALS.map((deal, idx) => ({
-        ...deal,
-        id: `deal_${fullRestaurant.id}_${idx + 1}`,
-        restaurantId: fullRestaurant.id,
-      }));
-      for (const deal of defaultDeals) {
-        await saveDealService(deal).catch(() => {});
-      }
-
       setRestaurants((prev) => [fullRestaurant, ...prev]);
       setActiveRestaurantId(fullRestaurant.id);
       addToast({
@@ -647,7 +678,7 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const getRestaurantBySlug = (slug: string): Restaurant | undefined => {
+  const getRestaurantBySlug = useCallback((slug: string): Restaurant | undefined => {
     const cleanSlug = slug.toLowerCase().trim();
     if (!cleanSlug) return undefined;
 
@@ -656,14 +687,9 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
     if (found) return found;
 
-    const stored = getStoredRestaurants();
-    const storedFound = stored.find(
-      (r) => r.slug.toLowerCase() === cleanSlug || (r.subdomain && r.subdomain.toLowerCase() === cleanSlug)
-    );
-    if (storedFound) return storedFound;
-
     if (
       activeRestaurant &&
+      activeRestaurant.slug &&
       (activeRestaurant.slug.toLowerCase() === cleanSlug ||
         (activeRestaurant.subdomain && activeRestaurant.subdomain.toLowerCase() === cleanSlug))
     ) {
@@ -671,9 +697,9 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     return undefined;
-  };
+  }, [restaurants, activeRestaurant]);
 
-  const fetchRestaurantBySlug = async (slug: string): Promise<Restaurant | null> => {
+  const fetchRestaurantBySlug = useCallback(async (slug: string): Promise<Restaurant | null> => {
     const cleanSlug = slug.toLowerCase().trim();
     if (!cleanSlug) return null;
     const immediate = getRestaurantBySlug(cleanSlug);
@@ -692,15 +718,11 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('Error fetching restaurant by slug:', e);
     }
     return null;
-  };
+  }, [getRestaurantBySlug]);
 
   // Menu Items Operations
   const getMenuItems = (restaurantId: string): MenuItem[] => {
-    const list = menuItems.filter((m) => m.restaurantId === restaurantId);
-    if (list.length === 0 && (restaurantId === DEFAULT_RESTAURANT.id || restaurantId === 'new_restaurant' || activeRestaurant.slug === 'my-restaurant')) {
-      return INITIAL_MENU_ITEMS;
-    }
-    return list;
+    return menuItems.filter((m) => m.restaurantId === restaurantId);
   };
 
   const addMenuItem = async (itemData: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
@@ -775,11 +797,7 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Deals Operations
   const getDeals = (restaurantId: string): Deal[] => {
-    const list = deals.filter((d) => d.restaurantId === restaurantId);
-    if (list.length === 0 && (restaurantId === DEFAULT_RESTAURANT.id || restaurantId === 'new_restaurant' || activeRestaurant.slug === 'my-restaurant')) {
-      return INITIAL_DEALS;
-    }
-    return list;
+    return deals.filter((d) => d.restaurantId === restaurantId);
   };
 
   const addDeal = async (dealData: Omit<Deal, 'id'>): Promise<Deal> => {

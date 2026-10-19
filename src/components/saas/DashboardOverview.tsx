@@ -42,28 +42,28 @@ export const DashboardOverview: React.FC = () => {
   const totalSales = orders.reduce((sum, o) => sum + (o.status !== 'Rejected' ? o.total : 0), 0);
 
   // Today's estimated slice
-  const todaysRevenue = totalSales > 0 ? (totalSales * 0.42).toFixed(2) : '384.50';
-  const weeklyRevenue = totalSales > 0 ? (totalSales * 0.85).toFixed(2) : '2,840.00';
+  const todaysRevenue = totalSales > 0 ? (totalSales * 0.42).toFixed(2) : '0.00';
+  const weeklyRevenue = totalSales > 0 ? (totalSales * 0.85).toFixed(2) : '0.00';
 
   // Monthly orders bar chart data
   const barChartData = [
-    { label: 'May', value: 34 },
-    { label: 'Jun', value: 48 },
-    { label: 'Jul', value: 62 },
-    { label: 'Aug', value: 55 },
-    { label: 'Sep', value: 84 },
-    { label: 'Oct', value: 112, highlight: true, tooltip: '+17.8%' },
+    { label: 'May', value: orders.length > 0 ? Math.floor(orders.length * 0.2) : 0 },
+    { label: 'Jun', value: orders.length > 0 ? Math.floor(orders.length * 0.3) : 0 },
+    { label: 'Jul', value: orders.length > 0 ? Math.floor(orders.length * 0.5) : 0 },
+    { label: 'Aug', value: orders.length > 0 ? Math.floor(orders.length * 0.6) : 0 },
+    { label: 'Sep', value: orders.length > 0 ? Math.floor(orders.length * 0.8) : 0 },
+    { label: 'Oct', value: orders.length, highlight: true },
   ];
 
   // Revenue area chart data
   const areaChartData = [
-    { label: 'Mon', value: 320 },
-    { label: 'Tue', value: 450 },
-    { label: 'Wed', value: 410 },
-    { label: 'Thu', value: 580 },
-    { label: 'Fri', value: 890 },
-    { label: 'Sat', value: 1140 },
-    { label: 'Sun', value: 960 },
+    { label: 'Mon', value: totalSales > 0 ? Math.round(totalSales * 0.1) : 0 },
+    { label: 'Tue', value: totalSales > 0 ? Math.round(totalSales * 0.12) : 0 },
+    { label: 'Wed', value: totalSales > 0 ? Math.round(totalSales * 0.14) : 0 },
+    { label: 'Thu', value: totalSales > 0 ? Math.round(totalSales * 0.16) : 0 },
+    { label: 'Fri', value: totalSales > 0 ? Math.round(totalSales * 0.2) : 0 },
+    { label: 'Sat', value: totalSales > 0 ? Math.round(totalSales * 0.18) : 0 },
+    { label: 'Sun', value: totalSales > 0 ? Math.round(totalSales * 0.1) : 0 },
   ];
 
   // Top Items Calculation
@@ -83,16 +83,8 @@ export const DashboardOverview: React.FC = () => {
     });
 
     const list = Array.from(itemMap.values()).sort((a, b) => b.count - a.count);
-    if (list.length > 0) return list.slice(0, 3);
-
-    // Fallback from menu items
-    return menuItems.slice(0, 3).map((mi, i) => ({
-      name: mi.name,
-      count: 24 - i * 6,
-      image: mi.imageUrl || mi.image,
-      price: mi.price,
-    }));
-  }, [orders, menuItems]);
+    return list.slice(0, 3);
+  }, [orders]);
 
   // Group orders to find active returning diners (buy repeatedly)
   const { returningCustomers, allActiveCustomers } = useMemo(() => {

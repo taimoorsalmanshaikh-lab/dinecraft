@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, X, AlertCircle } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { Restaurant, MenuItem } from '../../types';
 import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
+import { getRestaurantMenuItems } from '../../services/restaurantService';
 
 interface StorefrontMenuProps {
   restaurant: Restaurant;
@@ -16,8 +17,30 @@ export const StorefrontMenu: React.FC<StorefrontMenuProps> = ({ restaurant }) =>
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
+  const [fetchedItems, setFetchedItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const menuItems = getMenuItems(restaurant.id);
+  const contextItems = getMenuItems(restaurant.id);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (contextItems.length === 0 && restaurant.id) {
+      setIsLoading(true);
+      getRestaurantMenuItems(restaurant.id)
+        .then((items) => {
+          if (isMounted) setFetchedItems(items);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [restaurant.id, contextItems.length]);
+
+  const menuItems = contextItems.length > 0 ? contextItems : fetchedItems;
 
   const toggleLike = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
