@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Restaurant storefront configuration, branding, theme, content, and ordering rules",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "slug": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "bannerUrl": { "type": "string" },
+        "plateImageUrl": { "type": "string" },
+        "themeColor": { "type": "string" },
+        "theme": { "type": "object" },
+        "contact": { "type": "object" },
+        "ordering": { "type": "object" },
+        "content": { "type": "object" },
+        "sections": { "type": "object" },
+        "seo": { "type": "object" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "draftContent": { "type": "object" },
+        "plan": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["ownerId", "slug", "name", "status"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Food and beverage item offered by a restaurant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "longDescription": { "type": "string" },
+        "price": { "type": "number" },
+        "compareAtPrice": { "type": "number" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "gallery": { "type": "array" },
+        "available": { "type": "boolean" },
+        "featured": { "type": "boolean" },
+        "tags": { "type": "array" },
+        "calories": { "type": "number" },
+        "prepTimeMins": { "type": "number" },
+        "optionGroups": { "type": "array" },
+        "ratingAvg": { "type": "number" },
+        "ratingCount": { "type": "number" },
+        "sortOrder": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["restaurantId", "name", "price", "category"]
+    },
+    "Deal": {
+      "title": "Deal",
+      "description": "Promotional package or discount combo deal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "originalPrice": { "type": "number" },
+        "discountedPrice": { "type": "number" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "active": { "type": "boolean" },
+        "linkedItemIds": { "type": "array" }
+      },
+      "required": ["restaurantId", "title", "originalPrice", "discountedPrice", "active"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer food order with real-time tracking status and receipt breakdown",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "number" },
+        "restaurantId": { "type": "string" },
+        "restaurantSlug": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "fulfilmentType": { "type": "string", "enum": ["delivery", "pickup"] },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["New", "Accepted", "Preparing", "Ready", "Completed", "Rejected", "Cancelled"]
+        },
+        "statusHistory": { "type": "array" },
+        "estimatedReadyAt": { "type": "string" },
+        "rejectionReason": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["restaurantId", "customerName", "customerPhone", "items", "subtotal", "total", "status"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role differentiation between owners and customers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "customer", "admin"] },
+        "restaurantId": { "type": "string" },
+        "addresses": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/restaurants/{restaurantId}": {
+      "schema": "Restaurant",
+      "description": "Stores individual restaurant profile, theme, content, and settings"
+    },
+    "/restaurants/{restaurantId}/menuItems/{menuItemId}": {
+      "schema": "MenuItem",
+      "description": "Menu items belonging to a restaurant"
+    },
+    "/restaurants/{restaurantId}/deals/{dealId}": {
+      "schema": "Deal",
+      "description": "Special combo deals and discounts for a restaurant"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Top-level collection of customer orders supporting multi-tenant real-time queries"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account profiles and roles"
+    }
+  }
+}

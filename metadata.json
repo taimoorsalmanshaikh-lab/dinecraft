@@ -1,0 +1,6 @@
+{
+  "name": "DineCraft — Restaurant Website Builder SaaS",
+  "description": "Build, customize, preview, and publish professional restaurant websites with online ordering in minutes without coding.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
