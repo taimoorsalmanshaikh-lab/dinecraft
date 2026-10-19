@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-script: 'Dancing Script', cursive;
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Bento design tokens */
+    --canvas: #F3F4F6;
+    --app-container: #F3F4F6;
+    --card: #FFFFFF;
+
+    /* Storefront Bento tokens default fallback */
+    --sf-card: #FFFFFF;
+    --sf-surface: #F3F4F6;
+    --sf-radius-card: 28px;
+    --sf-radius-tile: 20px;
+    --sf-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
+    --sf-shadow-hover: 0 4px 6px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.08);
+
+    /* Brand orange tokens */
+    --brand: #FF6900;
+    --brand-dark: #E65F00;
+    --brand-deep: #C2410C;
+    --brand-soft: #FFF1E6;
+    --brand-mid: #FDBA74;
+    --brand-hatch: #FFD2A8;
+
+    /* Text tokens */
+    --heading: #111827;
+    --body: #4B5563;
+    --muted: #9CA3AF;
+
+    /* Elevation */
+    --bento-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
+    --bento-shadow-hover: 0 4px 6px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.08);
+  }
+
+  /* Storefront Bento Utilities */
+  .sf-card {
+    background-color: var(--sf-card, #FFFFFF);
+    border-radius: var(--sf-radius-card, 28px);
+    box-shadow: var(--sf-shadow, 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04));
+    border: none !important;
+  }
+
+  .sf-card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .sf-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sf-shadow-hover, 0 4px 6px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.08));
+  }
+
+  .sf-tile {
+    background-color: var(--sf-card, #FFFFFF);
+    border-radius: var(--sf-radius-tile, 20px);
+    box-shadow: var(--sf-shadow, 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04));
+    border: none !important;
+  }
+
+  .sf-button-primary {
+    background-color: var(--brand);
+    color: var(--brand-contrast, #FFFFFF);
+    border-radius: var(--radius, 9999px);
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    transition: all 0.15s ease;
+  }
+  .sf-button-primary:hover {
+    filter: brightness(0.96);
+  }
+  .sf-button-primary:active {
+    transform: scale(0.98);
+  }
+
+  .sf-button-secondary {
+    background-color: #FFFFFF;
+    color: var(--text, #111827);
+    border-radius: var(--radius, 9999px);
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 2px 8px rgba(16, 24, 40, 0.04);
+    border: none !important;
+    transition: all 0.15s ease;
+  }
+  .sf-button-secondary:hover {
+    box-shadow: 0 2px 4px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+  }
+  .sf-button-secondary:active {
+    transform: scale(0.98);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    color: var(--body);
+    background-color: var(--canvas);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--canvas);
+  }
+
+  /* Accessible focus indicators with brand orange */
+  *:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  /* Prevent text selection flicker during rapid clicks */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-script {
+  font-family: 'Dancing Script', cursive;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Tabular figures helper for currency and data rows */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
