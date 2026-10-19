@@ -97,7 +97,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ type }) => {
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
         if (err.code === 'auth/unauthorized-domain') {
-          setGeneralError('Google Sign-In is not authorized for this preview domain in Firebase. Please use Email & Password sign-in or registration below.');
+          setGeneralError('Google Sign-In is not authorized for this preview domain. Please use Email & Password sign-in or registration below.');
         } else {
           setGeneralError(err.message || 'Could not complete Google Sign-In.');
         }
