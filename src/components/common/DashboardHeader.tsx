@@ -9,6 +9,7 @@ import {
   Globe,
   Share2,
 } from 'lucide-react';
+import { buildStorefrontUrl, openStorefrontInNewTab } from '../../lib/subdomain';
 
 interface DashboardHeaderProps {
   onOpenMobileMenu: () => void;
@@ -41,7 +42,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   const copyStorefrontLink = () => {
-    const url = `${window.location.origin}/#/${activeRestaurant.slug}`;
+    const url = buildStorefrontUrl(activeRestaurant.slug);
     navigator.clipboard.writeText(url);
     addToast({
       type: 'success',
@@ -146,8 +147,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
           {/* View Website Button */}
           <button
-            onClick={() => navigate(`/${activeRestaurant.slug}`)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-all whitespace-nowrap"
+            onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-all whitespace-nowrap cursor-pointer"
           >
             <Globe className="w-3.5 h-3.5" />
             <span className="hidden xs:inline">View Storefront</span>

@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { Calendar, Plus, Globe, Tag, Sparkles } from 'lucide-react';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 
 interface PageHeaderProps {
   currentSubpage: string;
@@ -45,19 +46,19 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ currentSubpage }) => {
         return {
           label: 'View Storefront',
           icon: <Globe className="w-4 h-4" />,
-          onClick: () => navigate(`/${activeRestaurant.slug}`),
+          onClick: () => openStorefrontInNewTab(activeRestaurant.slug),
         };
       case 'website':
         return {
           label: 'Live Preview',
           icon: <Sparkles className="w-4 h-4" />,
-          onClick: () => navigate(`/${activeRestaurant.slug}`),
+          onClick: () => openStorefrontInNewTab(activeRestaurant.slug),
         };
       case 'reviews':
         return {
           label: 'Public Reviews',
           icon: <Globe className="w-4 h-4" />,
-          onClick: () => navigate(`/${activeRestaurant.slug}/reviews`),
+          onClick: () => openStorefrontInNewTab(activeRestaurant.slug, 'reviews'),
         };
       case 'overview':
       default:

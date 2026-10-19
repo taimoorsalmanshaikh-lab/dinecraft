@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { UtensilsCrossed, Menu, X, ArrowRight } from 'lucide-react';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 
 export const Navbar: React.FC = () => {
   const { navigate } = useRouter();
@@ -64,8 +65,8 @@ export const Navbar: React.FC = () => {
             </button>
             {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (
               <button
-                onClick={() => navigate(`/${activeRestaurant.slug}`)}
-                className="hover:text-orange-600 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5"
+                onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
+                className="hover:text-orange-600 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Live Storefront</span>
                 <span className="text-[10px] bg-orange-100 text-orange-800 font-semibold px-1.5 py-0.5 rounded">Live</span>
@@ -155,10 +156,10 @@ export const Navbar: React.FC = () => {
           {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (
             <button
               onClick={() => {
-                navigate(`/${activeRestaurant.slug}`);
+                openStorefrontInNewTab(activeRestaurant.slug);
                 setMobileMenuOpen(false);
               }}
-              className="block w-full text-left py-2 text-sm font-medium text-orange-600"
+              className="block w-full text-left py-2 text-sm font-medium text-orange-600 cursor-pointer"
             >
               Live Storefront ({activeRestaurant.name})
             </button>

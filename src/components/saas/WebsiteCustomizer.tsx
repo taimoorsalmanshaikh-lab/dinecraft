@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { AssetPickerModal } from './AssetPickerModal';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 import {
   BURGER_HERO_IMAGE,
   PIZZA_IMAGE,
@@ -231,9 +232,9 @@ export const WebsiteCustomizer: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigate(`/${activeRestaurant.slug}`)}
+            onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
             className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Open storefront in full page"
+            title="Open storefront in full page (new tab)"
           >
             <ExternalLink className="w-4 h-4" />
           </button>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { getSubdomain } from '../lib/subdomain';
+import { getSubdomain, RESERVED_SLUGS } from '../lib/subdomain';
 
 export interface RouteMatch {
   path: string;
@@ -326,6 +326,19 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ? second
           : 'overview',
         isAuth: false,
+        isOnboarding: false,
+        isLanding: false,
+      };
+    }
+
+    // Check for reserved system routes before storefront resolution
+    if (RESERVED_SLUGS.has(first)) {
+      return {
+        path: raw,
+        isStorefront: false,
+        isDashboard: false,
+        isAuth: true,
+        authType: 'login',
         isOnboarding: false,
         isLanding: false,
       };

@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); if (fs.existsSync('server.js')) fs.unlinkSync('server.js');\"",
     "lint": "tsc --noEmit",
-    "test:customer": "tsx src/services/customerIdentification.test.ts"
+    "test:customer": "tsx src/services/customerIdentification.test.ts",
+    "test:storefront": "tsx src/services/storefrontRouting.test.ts",
+    "test": "tsx src/services/storefrontRouting.test.ts && tsx src/services/customerIdentification.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

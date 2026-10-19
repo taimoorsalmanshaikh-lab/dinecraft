@@ -11,7 +11,7 @@ import {
   Share2,
 } from 'lucide-react';
 
-import { buildStorefrontUrl } from '../../lib/subdomain';
+import { buildStorefrontUrl, openStorefrontInNewTab } from '../../lib/subdomain';
 
 interface TopNavbarProps {
   currentSubpage: string;
@@ -32,7 +32,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentSubpage }) => {
   ];
 
   const handleCopyLink = () => {
-    const url = buildStorefrontUrl(activeRestaurant.subdomain || activeRestaurant.slug);
+    const url = buildStorefrontUrl(activeRestaurant.slug);
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -103,7 +103,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentSubpage }) => {
           {/* View Live Storefront Button */}
           <button
             type="button"
-            onClick={() => window.open(buildStorefrontUrl(activeRestaurant.subdomain || activeRestaurant.slug), '_blank')}
+            onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
             className="w-9 h-9 sm:w-auto sm:px-3.5 sm:py-1.5 rounded-full bg-[#FFF1E6] hover:bg-[#FFD2A8]/50 text-[#C2410C] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95"
             title="Open Live Website"
           >
@@ -172,9 +172,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ currentSubpage }) => {
                     type="button"
                     onClick={() => {
                       setShowDropdown(false);
-                      navigate(`/${activeRestaurant.slug}`);
+                      openStorefrontInNewTab(activeRestaurant.slug);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 rounded-2xl text-xs font-semibold text-[#111827] hover:bg-[#F3F4F6] flex items-center gap-2 cursor-pointer"
                   >
                     <Store className="w-3.5 h-3.5 text-[#FF6900]" />
                     <span>View Public Storefront</span>

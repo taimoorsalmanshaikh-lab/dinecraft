@@ -15,6 +15,7 @@ import {
   X,
   FolderOpen,
 } from 'lucide-react';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 
 interface DashboardSidebarProps {
   mobileOpen?: boolean;
@@ -158,10 +159,10 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         <div className="pt-3 mt-3 border-t border-slate-100">
           <button
             onClick={() => {
-              navigate(`/${activeRestaurant.slug}`);
+              openStorefrontInNewTab(activeRestaurant.slug);
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-orange-700 bg-orange-50/80 hover:bg-orange-100/80 border border-orange-200/60 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-orange-700 bg-orange-50/80 hover:bg-orange-100/80 border border-orange-200/60 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5 truncate">
               <ExternalLink className="w-4 h-4 text-orange-600 shrink-0" />

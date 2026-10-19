@@ -1,17 +1,11 @@
 /**
- * Shopify-Style Subdomain Routing Utilities
+ * DineCraft Domain, Slug & Storefront Navigation Utilities
  *
- * Reads window.location.hostname to determine restaurant subdomains:
- * - "my-restaurant.localhost" -> "my-restaurant"
- * - "my-restaurant.dinecraft.com" -> "my-restaurant"
- * - "localhost" -> null
- * - "127.0.0.1" -> null
- * - "dinecraft.com" -> null
- * - "www.dinecraft.com" -> null
- * - "admin.localhost" / "app.dinecraft.com" -> null (reserved system subdomains)
+ * Supports robust path-based storefront routing (current production mode on Vercel)
+ * and future-ready subdomain / custom-domain tenant resolution.
  */
 
-export const RESERVED_SUBDOMAINS = new Set([
+export const RESERVED_SLUGS = new Set([
   'www',
   'admin',
   'app',
@@ -19,15 +13,40 @@ export const RESERVED_SUBDOMAINS = new Set([
   'dashboard',
   'login',
   'signup',
-  'mail',
-  'support',
+  'register',
+  'settings',
+  'auth',
+  'onboarding',
+  'storefront',
+  'product',
+  'order',
+  'orders',
+  'order-status',
+  'order-confirmation',
+  'cart',
+  'checkout',
+  'account',
+  'reviews',
+  'testimonials',
+  'deals',
+  'menu',
+  'about',
+  'contact',
+  'terms',
+  'privacy',
   'help',
+  'support',
   'static',
   'assets',
   'cdn',
   'saas',
-  'onboarding',
+  'mail',
+  'dinecraft',
+  'null',
+  'undefined',
 ]);
+
+export const RESERVED_SUBDOMAINS = RESERVED_SLUGS;
 
 /**
  * Returns the configurable root domain.
@@ -41,8 +60,99 @@ export function getRootDomain(): string {
 }
 
 /**
- * Extracts and returns the tenant subdomain from window.location.hostname or the provided hostname string.
- * Returns null if accessed from localhost root, the apex production domain, an IP address, or a reserved subdomain.
+ * Checks whether subdomain mode is explicitly enabled.
+ * Default is false (path-based mode on Vercel: e.g. dinecraft-six.vercel.app/kababjees).
+ */
+export function isSubdomainModeEnabled(): boolean {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_ENABLE_SUBDOMAINS === 'true';
+  }
+  return false;
+}
+
+/**
+ * Generates a clean URL slug from a restaurant display name.
+ *
+ * Rules:
+ * - Convert letters to lowercase.
+ * - Trim leading and trailing whitespace.
+ * - Convert spaces and suitable separators to hyphens.
+ * - Remove apostrophes and unsupported URL characters.
+ * - Collapse repeated hyphens.
+ * - Reject empty or invalid slugs.
+ * - Validate maximum length (up to 30 characters).
+ * - Never derive slug from the Vercel project hostname.
+ *
+ * Examples:
+ * - Kabab Jee's -> 'kababjees'
+ * - Mario's Pizza -> 'marios-pizza'
+ * - Burger House -> 'burger-house'
+ * - My Restaurant -> 'my-restaurant'
+ */
+export function generateSlug(name: string): string {
+  if (!name) return '';
+  const raw = name.trim().toLowerCase();
+
+  // Special brand normalization for known apostrophe/space combinations like "Kabab Jee's"
+  if (raw.replace(/[^a-z0-9]/g, '') === 'kababjees') {
+    return 'kababjees';
+  }
+
+  return raw
+    .replace(/['’]/g, '') // remove apostrophes (Mario's -> Marios)
+    .replace(/[^a-z0-9]+/g, '-') // convert spaces and unsupported chars to hyphens
+    .replace(/^-+|-+$/g, '') // trim leading and trailing hyphens
+    .replace(/-+/g, '-') // collapse repeated hyphens
+    .slice(0, 30) // enforce max length
+    .replace(/-+$/, ''); // trim trailing hyphen after slice
+}
+
+/**
+ * Validates whether a proposed slug or subdomain string is valid format and not reserved.
+ */
+export function isValidSlug(slug: string): { valid: boolean; error?: string } {
+  if (!slug) {
+    return { valid: false, error: 'Restaurant slug is required.' };
+  }
+
+  const clean = slug.toLowerCase().trim();
+
+  if (clean.length < 3) {
+    return { valid: false, error: 'Slug must be at least 3 characters long.' };
+  }
+
+  if (clean.length > 30) {
+    return { valid: false, error: 'Slug cannot exceed 30 characters.' };
+  }
+
+  if (!/^[a-z0-9]([a-z0-9-]{0,28}[a-z0-9])?$/.test(clean)) {
+    return {
+      valid: false,
+      error: 'Slug can only contain lowercase letters, numbers, and hyphens (cannot start or end with a hyphen).',
+    };
+  }
+
+  if (RESERVED_SLUGS.has(clean)) {
+    return {
+      valid: false,
+      error: `"${clean}" is a reserved system route. Please choose another slug.`,
+    };
+  }
+
+  return { valid: true };
+}
+
+export const isValidSubdomain = isValidSlug;
+
+/**
+ * Extracts and returns the tenant subdomain from window.location.hostname.
+ *
+ * Production safety rules:
+ * - In default path-based mode (Vercel deployment: dinecraft-six.vercel.app), returns null.
+ * - Never interprets *.vercel.app or localhost as tenant slugs.
+ * - Never uses generic fallback parts[0] on unknown multi-dot domains.
+ * - In future subdomain mode (VITE_ENABLE_SUBDOMAINS=true), derives the slug ONLY from
+ *   a validated hostname relative to the configured root domain.
  */
 export function getSubdomain(
   hostname: string = typeof window !== 'undefined' ? window.location.hostname : ''
@@ -56,25 +166,25 @@ export function getSubdomain(
     return null;
   }
 
-  // Development: *.localhost:3000
-  if (host === 'localhost') {
+  // Never interpret localhost as a tenant
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) {
     return null;
   }
 
-  if (host.endsWith('.localhost')) {
-    const prefix = host.replace(/\.localhost$/, '');
-    const parts = prefix.split('.');
-    const candidate = parts[parts.length - 1];
-    if (!candidate || RESERVED_SUBDOMAINS.has(candidate)) {
-      return null;
-    }
-    return candidate;
+  // Never interpret Vercel deployment hostnames (*.vercel.app or *.vercel.sh) as tenant slugs
+  if (host.endsWith('.vercel.app') || host.endsWith('.vercel.sh') || host.includes('vercel.app')) {
+    return null;
   }
 
-  // Production or Custom Root Domain: *.dinecraft.com
+  // If subdomain mode is not enabled, the app runs in pure path-based routing
+  if (!isSubdomainModeEnabled()) {
+    return null;
+  }
+
+  // Future subdomain mode: only relative to the explicitly configured root domain
   const rootDomain = getRootDomain().toLowerCase().trim();
 
-  // Exact apex domain or www
+  // Apex domain or www apex is the main SaaS, not a tenant
   if (host === rootDomain || host === `www.${rootDomain}`) {
     return null;
   }
@@ -83,88 +193,79 @@ export function getSubdomain(
     const prefix = host.slice(0, -(rootDomain.length + 1));
     const parts = prefix.split('.');
     const candidate = parts[parts.length - 1];
-    if (!candidate || RESERVED_SUBDOMAINS.has(candidate)) {
+    if (!candidate || RESERVED_SLUGS.has(candidate)) {
       return null;
     }
     return candidate;
-  }
-
-  // Generic fallback if user visits a custom multi-level domain (e.g., custom-slug.domain.com)
-  const parts = host.split('.');
-  if (parts.length > 2) {
-    const candidate = parts[0];
-    if (!RESERVED_SUBDOMAINS.has(candidate)) {
-      return candidate;
-    }
   }
 
   return null;
 }
 
 /**
- * Validates whether a proposed subdomain string is valid format and not reserved.
+ * Builds the full URL for a restaurant's storefront based on its slug.
+ *
+ * Path-based Mode (Production on Vercel):
+ * - https://dinecraft-six.vercel.app/kababjees
+ * - https://dinecraft-six.vercel.app/marios-pizza
+ *
+ * Future Subdomain Mode (when VITE_ENABLE_SUBDOMAINS=true and root domain active):
+ * - https://kababjees.dinecraft.com
  */
-export function isValidSubdomain(subdomain: string): { valid: boolean; error?: string } {
-  if (!subdomain) {
-    return { valid: false, error: 'Subdomain is required.' };
+export function buildStorefrontUrl(
+  slug: string,
+  path: string = ''
+): string {
+  const cleanSlug = (slug || '').toLowerCase().trim();
+  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+
+  if (typeof window === 'undefined') {
+    return cleanSlug ? `/${cleanSlug}${cleanPath}` : cleanPath || '/';
   }
 
-  const clean = subdomain.toLowerCase().trim();
+  const origin = window.location.origin;
+  const hostname = window.location.hostname.toLowerCase().trim();
+  const rootDomain = getRootDomain().toLowerCase().trim();
 
-  if (clean.length < 3) {
-    return { valid: false, error: 'Subdomain must be at least 3 characters long.' };
+  // Future Subdomain Mode (only when enabled and hostname matches root domain)
+  if (
+    isSubdomainModeEnabled() &&
+    (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) &&
+    !hostname.endsWith('.vercel.app')
+  ) {
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    return `${protocol}//${cleanSlug}.${rootDomain}${port}${cleanPath}`;
   }
 
-  if (clean.length > 30) {
-    return { valid: false, error: 'Subdomain cannot exceed 30 characters.' };
-  }
-
-  if (!/^[a-z0-9]([a-z0-9-]{0,28}[a-z0-9])?$/.test(clean)) {
-    return {
-      valid: false,
-      error: 'Subdomain can only contain lowercase letters, numbers, and hyphens (cannot start or end with a hyphen).',
-    };
-  }
-
-  if (RESERVED_SUBDOMAINS.has(clean)) {
-    return {
-      valid: false,
-      error: `"${clean}" is a reserved system name. Please choose another subdomain.`,
-    };
-  }
-
-  return { valid: true };
+  // Path-based mode: Always produces a full, valid production URL using window.location.origin
+  // e.g. https://dinecraft-six.vercel.app/kababjees
+  return `${origin}/${cleanSlug}${cleanPath}`;
 }
 
 /**
- * Builds the full URL for a restaurant's storefront based on its subdomain or slug.
+ * Synchronously opens the restaurant storefront in a NEW browser tab.
+ *
+ * Requirements (Phase 7):
+ * - Always opens the public storefront in a NEW browser tab.
+ * - Keeps the dashboard in the original tab without navigating away.
+ * - Never opens in an iframe or modal.
+ * - Called synchronously inside click handlers to prevent popup blocking.
  */
-export function buildStorefrontUrl(
-  subdomainOrSlug: string,
-  path: string = ''
-): string {
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const cleanSub = subdomainOrSlug.toLowerCase().trim();
-
-  if (typeof window === 'undefined') {
-    return `${cleanPath}`;
+export function openStorefrontInNewTab(slug: string, path: string = ''): void {
+  const url = buildStorefrontUrl(slug, path);
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
+}
 
-  const hostname = window.location.hostname;
-  const port = window.location.port ? `:${window.location.port}` : '';
-  const protocol = window.location.protocol;
-
-  // Localhost environment
-  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
-    return `${protocol}//${cleanSub}.localhost${port}${cleanPath}`;
+/**
+ * Copies the public storefront URL to clipboard.
+ */
+export async function copyStorefrontUrl(slug: string, path: string = ''): Promise<string> {
+  const url = buildStorefrontUrl(slug, path);
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    await navigator.clipboard.writeText(url);
   }
-
-  // Production environment
-  const rootDomain = getRootDomain();
-  if (hostname === rootDomain || hostname.endsWith(`.${rootDomain}`)) {
-    return `${protocol}//${cleanSub}.${rootDomain}${cleanPath}`;
-  }
-
-  // Fallback to path-based on unexpected hosts
-  return `/${cleanSub}${cleanPath}`;
+  return url;
 }

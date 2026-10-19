@@ -6,6 +6,7 @@ import {
   RealReviewItem,
 } from '../../services/restaurantService';
 import { getAvatarColor, getInitial } from '../../lib/avatarUtils';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 import {
   Star,
   Search,
@@ -173,7 +174,7 @@ export const ReviewsManager: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => navigate(`/${activeRestaurant.slug}/reviews`)}
+            onClick={() => openStorefrontInNewTab(activeRestaurant.slug, 'reviews')}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF6900] hover:bg-[#e05d00] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
           >
             <span>Public Reviews Page</span>

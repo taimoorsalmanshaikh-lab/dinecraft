@@ -274,7 +274,7 @@ export async function getOwnerRestaurants(ownerId: string): Promise<Restaurant[]
 
 export async function getRestaurantBySlug(slug: string): Promise<Restaurant | null> {
   const cleanSlug = slug.toLowerCase().trim();
-  if (!cleanSlug) return DEFAULT_RESTAURANT;
+  if (!cleanSlug) return null;
 
   try {
     const { data, error } = await supabase
@@ -294,9 +294,6 @@ export async function getRestaurantBySlug(slug: string): Promise<Restaurant | nu
     console.warn('[Supabase] Exception fetching restaurant by slug:', err);
   }
 
-  if (cleanSlug === 'my-restaurant') {
-    return DEFAULT_RESTAURANT;
-  }
   return null;
 }
 
@@ -304,17 +301,50 @@ export async function getRestaurantBySubdomain(subdomain: string): Promise<Resta
   return getRestaurantBySlug(subdomain);
 }
 
-export async function checkSubdomainAvailable(
-  subdomain: string,
+export async function checkSlugAvailable(
+  slug: string,
   excludeRestaurantId?: string
-): Promise<{ available: boolean; error?: string }> {
-  const clean = subdomain.toLowerCase().trim();
+): Promise<{ available: boolean; error?: string; suggestedSlug?: string }> {
+  const clean = slug.toLowerCase().trim();
   const formatCheck = isValidSubdomain(clean);
   if (!formatCheck.valid) {
     return { available: false, error: formatCheck.error };
   }
 
   try {
+    // 1. Try atomic Supabase RPC function (checks both published & draft restaurants + reserved names)
+    const { data, error } = await supabase.rpc('check_slug_availability', {
+      proposed_slug: clean,
+      exclude_id: excludeRestaurantId || null,
+    });
+
+    if (!error && typeof data === 'boolean') {
+      if (data === true) {
+        return { available: true };
+      }
+
+      // Slug is taken or reserved. Generate a sensible alternative suggestion (e.g. kababjees-2)
+      let suggestedSlug: string | undefined;
+      for (let i = 2; i <= 9; i++) {
+        const candidate = `${clean.slice(0, 27)}-${i}`;
+        const { data: candAvail } = await supabase.rpc('check_slug_availability', {
+          proposed_slug: candidate,
+          exclude_id: excludeRestaurantId || null,
+        });
+        if (candAvail === true) {
+          suggestedSlug = candidate;
+          break;
+        }
+      }
+
+      return {
+        available: false,
+        error: `The slug "${clean}" is already in use by another restaurant.`,
+        suggestedSlug,
+      };
+    }
+
+    // 2. Direct table fallback if RPC is not accessible
     let query = supabase
       .from('restaurants')
       .select('id, subdomain, slug')
@@ -324,22 +354,34 @@ export async function checkSubdomainAvailable(
       query = query.neq('id', excludeRestaurantId);
     }
 
-    const { data, error } = await query;
-    if (error) {
-      console.warn('[Supabase] Error checking subdomain availability:', error);
-      return { available: true };
+    const { data: tableData, error: tableError } = await query;
+    if (tableError) {
+      console.warn('[Supabase] Error checking slug availability:', tableError);
+      return {
+        available: false,
+        error: 'Unable to verify slug availability due to a network error. Please try again.',
+      };
     }
 
-    if (data && data.length > 0) {
-      return { available: false, error: 'This subdomain is already taken by another store.' };
+    if (tableData && tableData.length > 0) {
+      return {
+        available: false,
+        error: `The slug "${clean}" is already in use by another restaurant.`,
+        suggestedSlug: `${clean.slice(0, 27)}-2`,
+      };
     }
 
     return { available: true };
   } catch (err) {
-    console.warn('[Supabase] Exception checking subdomain availability:', err);
-    return { available: true };
+    console.warn('[Supabase] Exception checking slug availability:', err);
+    return {
+      available: false,
+      error: 'Network error checking slug availability. Please check your connection and try again.',
+    };
   }
 }
+
+export const checkSubdomainAvailable = checkSlugAvailable;
 
 export async function getRestaurantById(id: string): Promise<Restaurant | null> {
   try {
@@ -369,7 +411,16 @@ export async function getRestaurantById(id: string): Promise<Restaurant | null> 
 export async function saveRestaurant(restaurant: Restaurant): Promise<void> {
   const user = (await supabase.auth.getUser()).data.user;
   const ownerId = user?.id || restaurant.ownerId || '00000000-0000-0000-0000-000000000000';
-  const row = mapRestaurantToRow(restaurant, ownerId);
+  
+  // Normalize slug and subdomain strictly before persistence
+  const cleanSlug = restaurant.slug.toLowerCase().trim();
+  const normalizedResto: Restaurant = {
+    ...restaurant,
+    slug: cleanSlug,
+    subdomain: cleanSlug,
+  };
+
+  const row = mapRestaurantToRow(normalizedResto, ownerId);
 
   const { error } = await supabase
     .from('restaurants')
@@ -377,6 +428,16 @@ export async function saveRestaurant(restaurant: Restaurant): Promise<void> {
 
   if (error) {
     console.error('[Supabase] Error saving restaurant:', error);
+    // Safe race-condition / uniqueness error handling (PostgreSQL code 23505)
+    if (
+      (error as any).code === '23505' ||
+      error.message?.includes('duplicate key') ||
+      error.message?.includes('restaurants_slug')
+    ) {
+      throw new Error(
+        `The URL slug "${cleanSlug}" is already claimed by another restaurant. Please choose another slug.`
+      );
+    }
     throw error;
   }
 }

@@ -47,6 +47,7 @@ import {
   INITIAL_MENU_ITEMS,
   INITIAL_DEALS,
 } from '../data/mockData';
+import { generateSlug, isValidSlug } from '../lib/subdomain';
 
 interface ToastMessage {
   id: string;
@@ -409,13 +410,9 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   ): Promise<string> => {
     try {
       const { user } = await signUpWithOwner(email, password, name);
-      // Clean slug
-      const cleanSlug =
-        restaurantName
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-|-$/g, '') || `resto-${Date.now().toString(36)}`;
+      // Clean slug using standard DineCraft slug generation rules
+      const baseSlug = generateSlug(restaurantName) || 'my-restaurant';
+      const cleanSlug = baseSlug;
 
       const newRestoId = `resto_${cleanSlug}_${Date.now().toString(36)}`;
       const newResto: Restaurant = {
@@ -552,19 +549,9 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Restaurant Operations
   const createRestaurant = async (newRestoData: Partial<Restaurant>): Promise<Restaurant> => {
-    const cleanSlug =
-      (newRestoData.slug || newRestoData.name || 'restaurant')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '') || `resto-${Date.now().toString(36)}`;
-
-    const cleanSubdomain =
-      (newRestoData.subdomain || newRestoData.slug || newRestoData.name || 'restaurant')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '') || `resto-${Date.now().toString(36)}`;
+    const rawSlugCandidate = newRestoData.slug || newRestoData.name || 'restaurant';
+    const cleanSlug = generateSlug(rawSlugCandidate) || `resto-${Date.now().toString(36)}`;
+    const cleanSubdomain = cleanSlug;
 
     const id = newRestoData.id && newRestoData.id !== 'new_restaurant' ? newRestoData.id : `resto_${cleanSlug}_${Date.now().toString(36)}`;
     const fullRestaurant: Restaurant = {
@@ -633,8 +620,13 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         });
         return;
       }
+
+      // Preserve existing slug unless explicitly changed; display name updates must NEVER alter existing slug
+      const cleanSlug = updated.slug ? generateSlug(updated.slug) : updated.slug;
       const restoToSave: Restaurant = {
         ...updated,
+        slug: cleanSlug || updated.slug,
+        subdomain: cleanSlug || updated.subdomain,
         ownerId: currentUser?.uid || updated.ownerId || 'guest',
       };
       await saveRestoService(restoToSave);
@@ -657,7 +649,7 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const getRestaurantBySlug = (slug: string): Restaurant | undefined => {
     const cleanSlug = slug.toLowerCase().trim();
-    if (!cleanSlug) return activeRestaurant || DEFAULT_RESTAURANT;
+    if (!cleanSlug) return undefined;
 
     const found = restaurants.find(
       (r) => r.slug.toLowerCase() === cleanSlug || (r.subdomain && r.subdomain.toLowerCase() === cleanSlug)
@@ -678,15 +670,12 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return activeRestaurant;
     }
 
-    if (cleanSlug === 'my-restaurant' || cleanSlug === 'demo' || cleanSlug === 'default') {
-      return DEFAULT_RESTAURANT;
-    }
-
     return undefined;
   };
 
   const fetchRestaurantBySlug = async (slug: string): Promise<Restaurant | null> => {
     const cleanSlug = slug.toLowerCase().trim();
+    if (!cleanSlug) return null;
     const immediate = getRestaurantBySlug(cleanSlug);
     if (immediate) return immediate;
 
@@ -702,7 +691,6 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } catch (e) {
       console.warn('Error fetching restaurant by slug:', e);
     }
-    if (cleanSlug === 'my-restaurant') return DEFAULT_RESTAURANT;
     return null;
   };
 

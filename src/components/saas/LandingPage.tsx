@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { BURGER_HERO_IMAGE } from '../../data/mockData';
+import { openStorefrontInNewTab } from '../../lib/subdomain';
 
 export const LandingPage: React.FC = () => {
   const { navigate } = useRouter();
@@ -202,8 +203,8 @@ export const LandingPage: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate(`/${activeRestaurant.slug}`)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/30 backdrop-blur-sm transition-all"
+                  onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/30 backdrop-blur-sm transition-all cursor-pointer"
                 >
                   <Store className="w-4 h-4 text-orange-400" />
                   <span>Explore Demo Store</span>

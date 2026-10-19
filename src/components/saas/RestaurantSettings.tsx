@@ -10,8 +10,15 @@ import {
   Sparkles,
   Link as LinkIcon,
 } from 'lucide-react';
-import { isValidSubdomain, buildStorefrontUrl, getRootDomain } from '../../lib/subdomain';
-import { checkSubdomainAvailable } from '../../services/restaurantService';
+import {
+  isValidSubdomain,
+  buildStorefrontUrl,
+  getRootDomain,
+  generateSlug,
+  isSubdomainModeEnabled,
+  openStorefrontInNewTab,
+} from '../../lib/subdomain';
+import { checkSlugAvailable } from '../../services/restaurantService';
 
 export const RestaurantSettings: React.FC = () => {
   const { activeRestaurant, updateRestaurant, restaurants, addToast } = useDineCraft();
@@ -24,6 +31,7 @@ export const RestaurantSettings: React.FC = () => {
     'idle' | 'checking' | 'available' | 'taken' | 'invalid'
   >('idle');
   const [subdomainMessage, setSubdomainMessage] = useState('');
+  const [suggestedSlug, setSuggestedSlug] = useState<string | null>(null);
 
   const logoOptions = ['🍔', '🍕', '🌮', '🍗', '🍲', '☕', '🥐', '🥩', '🥗', '🍩', '🍣', '🍰'];
 
@@ -31,37 +39,43 @@ export const RestaurantSettings: React.FC = () => {
     const clean = (form.slug || '').trim().toLowerCase();
     if (!clean) {
       setSubdomainStatus('invalid');
-      setSubdomainMessage('Subdomain is required.');
+      setSubdomainMessage('Slug is required.');
+      setSuggestedSlug(null);
       return;
     }
 
     if (clean === activeRestaurant.slug?.toLowerCase()) {
       setSubdomainStatus('available');
-      setSubdomainMessage('Current active subdomain.');
+      setSubdomainMessage('Current active URL slug.');
+      setSuggestedSlug(null);
       return;
     }
 
     const formatCheck = isValidSubdomain(clean);
     if (!formatCheck.valid) {
       setSubdomainStatus('invalid');
-      setSubdomainMessage(formatCheck.error || 'Invalid subdomain format.');
+      setSubdomainMessage(formatCheck.error || 'Invalid slug format.');
+      setSuggestedSlug(null);
       return;
     }
 
     setSubdomainStatus('checking');
     const timer = setTimeout(async () => {
       try {
-        const res = await checkSubdomainAvailable(clean, activeRestaurant.id);
+        const res = await checkSlugAvailable(clean, activeRestaurant.id);
         if (res.available) {
           setSubdomainStatus('available');
-          setSubdomainMessage('Subdomain is available!');
+          setSubdomainMessage('Slug is available!');
+          setSuggestedSlug(null);
         } else {
           setSubdomainStatus('taken');
-          setSubdomainMessage(res.error || 'Subdomain already taken.');
+          setSubdomainMessage(res.error || 'Slug already taken.');
+          setSuggestedSlug(res.suggestedSlug || null);
         }
       } catch {
-        setSubdomainStatus('available');
-        setSubdomainMessage('Available');
+        setSubdomainStatus('invalid');
+        setSubdomainMessage('Could not verify slug availability due to a network error.');
+        setSuggestedSlug(null);
       }
     }, 350);
 
@@ -69,7 +83,7 @@ export const RestaurantSettings: React.FC = () => {
   }, [form.slug, activeRestaurant.slug, activeRestaurant.id]);
 
   const handleSlugChange = (newSlug: string) => {
-    const cleaned = newSlug.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const cleaned = generateSlug(newSlug);
     setForm({ ...form, slug: cleaned, subdomain: cleaned });
     if (cleaned !== activeRestaurant.slug) {
       setSlugWarning(true);
@@ -412,28 +426,25 @@ export const RestaurantSettings: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
               3. Storefront Subdomain & Address
             </h3>
-            <a
-              href={buildStorefrontUrl(form.slug || activeRestaurant.slug)}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={() => openStorefrontInNewTab(form.slug || activeRestaurant.slug)}
               className="text-[11px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
             >
               <span>Visit Live Store</span>
               <ExternalLink className="w-3 h-3" />
-            </a>
+            </button>
           </div>
 
           <div className="text-xs space-y-2">
             <label className="block font-bold text-slate-700">
-              Shopify-Style Restaurant Subdomain
+              Restaurant URL Slug
             </label>
             <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 overflow-hidden focus-within:border-orange-500">
               <span className="px-3 text-slate-400 font-mono text-[11px]">
-                {typeof window !== 'undefined' &&
-                (window.location.hostname === 'localhost' ||
-                  window.location.hostname.endsWith('.localhost'))
-                  ? 'http://'
-                  : 'https://'}
+                {isSubdomainModeEnabled()
+                  ? 'https://'
+                  : `${typeof window !== 'undefined' ? window.location.origin : 'https://dinecraft-six.vercel.app'}/`}
               </span>
               <input
                 type="text"
@@ -442,21 +453,19 @@ export const RestaurantSettings: React.FC = () => {
                 onChange={(e) => handleSlugChange(e.target.value)}
                 className="flex-1 py-2.5 px-2 bg-transparent font-bold text-slate-900 font-mono text-xs focus:outline-hidden"
               />
-              <span className="px-3 text-slate-500 font-mono text-[11px] bg-slate-100/70 border-l border-slate-200">
-                {typeof window !== 'undefined' &&
-                (window.location.hostname === 'localhost' ||
-                  window.location.hostname.endsWith('.localhost'))
-                  ? `.localhost${window.location.port ? `:${window.location.port}` : ''}`
-                  : `.${getRootDomain()}`}
-              </span>
+              {isSubdomainModeEnabled() && (
+                <span className="px-3 text-slate-500 font-mono text-[11px] bg-slate-100/70 border-l border-slate-200">
+                  .{getRootDomain()}
+                </span>
+              )}
             </div>
 
             {/* Subdomain real-time feedback */}
-            <div className="flex items-center justify-between text-[11px] pt-0.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-0.5">
               {subdomainStatus === 'checking' && (
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin inline-block" />
-                  Checking availability...
+                  Checking slug availability...
                 </span>
               )}
               {subdomainStatus === 'available' && (
@@ -469,6 +478,16 @@ export const RestaurantSettings: React.FC = () => {
                 <span className="text-rose-600 font-semibold">
                   {subdomainMessage}
                 </span>
+              )}
+              {suggestedSlug && (
+                <button
+                  type="button"
+                  onClick={() => handleSlugChange(suggestedSlug)}
+                  className="text-[11px] font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <span>Suggested alternative:</span>
+                  <span className="font-mono font-bold">{suggestedSlug}</span>
+                </button>
               )}
             </div>
 
