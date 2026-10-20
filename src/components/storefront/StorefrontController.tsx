@@ -19,7 +19,7 @@ import { DEFAULT_RESTAURANT } from '../../data/mockData';
 
 export const StorefrontController: React.FC = () => {
   const { routeMatch, navigate } = useRouter();
-  const { getRestaurantBySlug, fetchRestaurantBySlug, restaurants, activeRestaurant, currentUser } = useDineCraft();
+  const { getRestaurantBySlug, fetchRestaurantBySlug, restaurants, activeRestaurant, currentUser, isAuthLoading } = useDineCraft();
 
   const slug = (routeMatch.restaurantSlug || '').trim().toLowerCase();
   const [asyncResto, setAsyncResto] = React.useState<any>(null);
@@ -44,9 +44,11 @@ export const StorefrontController: React.FC = () => {
     }
 
     if (synchronousResto) {
-      setHasSearched(true);
-      setIsFetching(false);
-      return;
+      if (synchronousResto.websiteStatus !== 'draft' || (currentUser && currentUser.uid === synchronousResto.ownerId)) {
+        setHasSearched(true);
+        setIsFetching(false);
+        return;
+      }
     }
 
     setIsFetching(true);
@@ -71,9 +73,23 @@ export const StorefrontController: React.FC = () => {
     return () => {
       isCancelled = true;
     };
-  }, [slug, synchronousResto, fetchRestaurantBySlug]);
+  }, [slug, synchronousResto, fetchRestaurantBySlug, isAuthLoading, currentUser?.uid]);
 
-  if (isFetching && !restaurant) {
+  // Keep showing loading card if:
+  // 1. Fetching in progress
+  // 2. Restaurant not found yet while auth session is still checking
+  // 3. Restaurant is draft and viewer ownership cannot be determined until auth finishes
+  const isDraftWaitingForAuth = Boolean(
+    restaurant &&
+    restaurant.websiteStatus === 'draft' &&
+    restaurant.ownerId &&
+    (!currentUser || currentUser.uid !== restaurant.ownerId) &&
+    isAuthLoading
+  );
+
+  const isStoreWaitingForAuth = !restaurant && isAuthLoading;
+
+  if ((isFetching && !restaurant) || isStoreWaitingForAuth || isDraftWaitingForAuth) {
     return (
       <div className="min-h-screen bg-[var(--canvas,#E9EAEE)] flex items-center justify-center p-4">
         <div className="sf-card p-8 max-w-sm w-full text-center space-y-3">

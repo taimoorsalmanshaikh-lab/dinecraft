@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { MenuItem } from '../../types';
+import { formatCurrency, getCurrencySymbol } from '../../lib/currency';
 import {
   Plus,
   Search,
@@ -28,6 +29,7 @@ import {
 export const MenuManager: React.FC = () => {
   const { activeRestaurant, getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, addToast } =
     useDineCraft();
+  const currency = activeRestaurant.ordering?.currency || activeRestaurant.currency || '$';
 
   const menuItems = getMenuItems(activeRestaurant.id);
 
@@ -53,12 +55,7 @@ export const MenuManager: React.FC = () => {
   const [newCatName, setNewCatName] = useState('');
   const [editingCatName, setEditingCatName] = useState<{ original: string; current: string } | null>(null);
 
-  const imagePresets = [
-    { label: 'Gourmet Burger', url: BURGER_HERO_IMAGE },
-    { label: 'Wood-Fired Pizza', url: PIZZA_IMAGE },
-    { label: 'Aromatic Desi / Curry', url: BIRYANI_IMAGE },
-    { label: 'Dining Platter', url: RESTAURANT_INTERIOR_IMAGE },
-  ];
+
 
   // Dynamic Categories from existing menu items and default presets
   const categories = useMemo(() => {
@@ -82,16 +79,7 @@ export const MenuManager: React.FC = () => {
     });
   }, [menuItems, selectedCategory, search]);
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const res = event.target?.result as string;
-      if (res) setFormImage(res);
-    };
-    reader.readAsDataURL(file);
-  };
+
 
   const openAddModal = () => {
     setEditingItem(null);
@@ -371,7 +359,7 @@ export const MenuManager: React.FC = () => {
 
                       <h3 className="text-sm font-bold text-slate-900 truncate">{item.name}</h3>
                       <p className="text-xs font-black text-[#172033] mt-1 tabular-nums">
-                        ${item.price.toFixed(2)}
+                        {formatCurrency(item.price, currency)}
                       </p>
                     </div>
                   </div>
@@ -462,7 +450,7 @@ export const MenuManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Price ($) *
+                    Price ({getCurrencySymbol(currency)}) *
                   </label>
                   <input
                     type="number"
@@ -524,61 +512,60 @@ export const MenuManager: React.FC = () => {
                 />
               </div>
 
-              {/* Product Image */}
+              {/* Product Image Selection exclusively via Assets */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Product Photo
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  Dish Image
                 </label>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                      <img
-                        src={formImage || BURGER_HERO_IMAGE}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  {formImage ? (
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-2xs relative group">
+                        <img
+                          src={formImage}
+                          alt="Dish Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 w-full space-y-1.5 text-center sm:text-left">
+                        <p className="text-[11px] font-bold text-slate-700">Selected Photo</p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-xs">{formImage}</p>
+                        <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setAssetPickerOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF1E6] hover:bg-[#ffe3cc] text-[#FF6900] font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>Change from Assets</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormImage('')}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-200/70 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex-1 flex items-center gap-2">
+                  ) : (
                     <button
                       type="button"
                       onClick={() => setAssetPickerOpen(true)}
-                      className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs transition-colors shadow-2xs cursor-pointer"
+                      className="w-full py-4 px-4 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/40 hover:bg-orange-50/80 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
                     >
-                      <ImageIcon className="w-4 h-4 text-orange-600" />
-                      <span>Select from Assets</span>
-                    </button>
-
-                    <label className="flex-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/50 hover:bg-orange-50 cursor-pointer text-orange-700 font-bold text-xs transition-colors">
-                      <Upload className="w-4 h-4" />
-                      <span>Upload File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageFileChange}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-1.5 pt-1">
-                  {imagePresets.map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setFormImage(p.url)}
-                      className={`rounded-lg border overflow-hidden text-left p-1 cursor-pointer ${
-                        formImage === p.url ? 'border-orange-600 bg-orange-50' : 'border-slate-200 opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <div className="aspect-square rounded bg-slate-100 overflow-hidden mb-1">
-                        <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                      <div className="w-9 h-9 rounded-full bg-[#FFF1E6] text-[#FF6900] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                        <ImageIcon className="w-5 h-5" />
                       </div>
-                      <span className="block text-[9px] font-semibold text-slate-700 truncate">{p.label}</span>
+                      <span className="text-xs font-bold text-[#FF6900]">
+                        Select Photo from Assets
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        Choose from library or upload new with live progress
+                      </span>
                     </button>
-                  ))}
+                  )}
                 </div>
               </div>
 

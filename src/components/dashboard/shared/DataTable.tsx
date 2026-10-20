@@ -32,8 +32,8 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full text-left border-collapse">
+    <div className="w-full overflow-x-auto scrollbar-thin">
+      <table className="w-full text-left border-collapse min-w-[620px]">
         <thead>
           <tr className="border-b border-transparent">
             {columns.map((col) => (
@@ -93,21 +93,10 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
         return (
           <div
             key={i}
-            className={`w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center text-[11px] font-bold shadow-xs shrink-0 uppercase select-none ${
-              av.image ? 'bg-slate-100' : colorClass
-            }`}
+            className={`w-8 h-8 rounded-full border-2 border-white overflow-hidden flex items-center justify-center text-[11px] font-bold shadow-xs shrink-0 uppercase select-none ${colorClass}`}
             title={av.name}
           >
-            {av.image ? (
-              <img
-                src={av.image}
-                alt={av.name}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span>{getInitial(av.name)}</span>
-            )}
+            <span>{getInitial(av.name)}</span>
           </div>
         );
       })}

@@ -24,6 +24,7 @@ import {
   RESTAURANT_INTERIOR_IMAGE,
 } from '../../data/mockData';
 import { ProductCard } from './ProductCard';
+import { formatCurrency } from '../../lib/currency';
 
 interface StorefrontHomeProps {
   restaurant: Restaurant;
@@ -148,10 +149,18 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
     navigate(`/${restaurant.slug}/product/${id}`);
   };
 
+  const [videoFailed, setVideoFailed] = useState(false);
+
   // Customizable hero texts & banner
   const heroHeading = restaurant.heroHeading || restaurant.content?.heroHeading || 'Good Food Brings People Together';
   const heroTagline = restaurant.heroTagline || restaurant.content?.heroTagline || restaurant.description || 'Experience delicious food crafted with passion, authentic recipes, and the freshest ingredients.';
   const heroBanner = restaurant.banner || restaurant.bannerUrl || restaurant.plateImageUrl || BURGER_HERO_IMAGE;
+  const heroMediaType = restaurant.heroMediaType || restaurant.content?.heroMediaType || 'image';
+  const heroVideoUrl = restaurant.heroVideoUrl || restaurant.content?.heroVideoUrl || '';
+  const heroPrimaryCtaText = restaurant.heroPrimaryCtaText || restaurant.content?.heroPrimaryCtaText || 'Order Online Now';
+  const heroPrimaryCtaLink = restaurant.heroPrimaryCtaLink || restaurant.content?.heroPrimaryCtaLink || `/${restaurant.slug}/menu`;
+  const heroSecondaryCtaText = restaurant.heroSecondaryCtaText || restaurant.content?.heroSecondaryCtaText || 'View Hot Deals';
+  const heroSecondaryCtaLink = restaurant.heroSecondaryCtaLink || restaurant.content?.heroSecondaryCtaLink || '#deals-section';
 
   // Single customizable promotional special offer banner
   const promoHeading = restaurant.content?.reservationBanner?.title || 'Get 20% Off Your First Online Order';
@@ -163,68 +172,84 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
 
   return (
     <div className="space-y-10 sm:space-y-16 pb-12 text-[var(--text)]">
-      {/* 1. HERO SECTION: Large Rounded Bento Card */}
-      <section className="sf-card p-6 sm:p-10 lg:p-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Content Column */}
-          <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--brand-subtle)] text-[var(--brand)] text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Authentic Flavors · Fresh Daily</span>
-            </div>
+      {/* 1. CINEMATIC HERO SECTION: Full-Viewport Video / Image Background */}
+      <section className="relative w-full rounded-[28px] sm:rounded-[36px] overflow-hidden min-h-[500px] sm:min-h-[600px] lg:min-h-[82vh] flex items-center bg-slate-950 shadow-md">
+        {/* Background Media: Looping Video or Image */}
+        {heroMediaType === 'video' && heroVideoUrl && !videoFailed ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster={heroBanner}
+            onError={() => setVideoFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover scale-105 pointer-events-none"
+          >
+            <source src={heroVideoUrl} type="video/mp4" />
+            <source src={heroVideoUrl} type="video/webm" />
+            <source src={heroVideoUrl} type="video/quicktime" />
+          </video>
+        ) : (
+          <img
+            src={heroBanner}
+            alt={restaurant.name}
+            className="absolute inset-0 w-full h-full object-cover scale-105 pointer-events-none"
+            referrerPolicy="no-referrer"
+          />
+        )}
 
-            <h1
-              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[var(--text)] tracking-tight leading-[1.15]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              {heroHeading}
-            </h1>
+        {/* High-Contrast Dual Gradient Overlay for Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40 backdrop-blur-[0.5px] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
-            <p className="text-xs sm:text-sm md:text-base text-[var(--text-muted)] max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              {heroTagline}
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1">
-              <Link
-                to={`/${restaurant.slug}/menu`}
-                className="sf-button-primary inline-flex items-center gap-2 px-6 py-3"
-              >
-                <span>Order Online Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              {displayDeals.length > 0 && (
-                <a
-                  href="#deals-section"
-                  className="sf-button-secondary inline-flex items-center gap-2 px-5 py-3"
-                >
-                  <BadgePercent className="w-4 h-4 text-[var(--brand)]" />
-                  <span>View Hot Deals</span>
-                </a>
-              )}
-            </div>
+        {/* Hero Foreground Content */}
+        <div className="relative z-10 w-full max-w-4xl p-6 sm:p-12 lg:p-16 text-white space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold w-fit shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#FF6900]" />
+            <span>Authentic Culinary Craft · Fresh Daily</span>
           </div>
 
-          {/* Right Banner Image Bento Tile */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-md aspect-[4/3] rounded-[var(--sf-radius-tile,20px)] overflow-hidden shadow-sm bg-[#F3F4F6] group">
-              <img
-                src={heroBanner}
-                alt={restaurant.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-xs p-3 rounded-xl shadow-xs flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-[var(--text)]">{restaurant.name}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">Fast Delivery · Kitchen Fresh</p>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
-                  Open Now
-                </span>
-              </div>
+          <h1
+            className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12] drop-shadow-md"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
+            {heroHeading}
+          </h1>
+
+          <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-2xl leading-relaxed font-normal drop-shadow-xs">
+            {heroTagline}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
+            <Link
+              to={heroPrimaryCtaLink}
+              className="px-7 py-3.5 rounded-full bg-[#FF6900] hover:bg-[#E65F00] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(255,105,0,0.45)] transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+            >
+              <span>{heroPrimaryCtaText}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            {heroSecondaryCtaText && (
+              <a
+                href={heroSecondaryCtaLink}
+                className="px-6 py-3.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <BadgePercent className="w-4 h-4 text-orange-400" />
+                <span>{heroSecondaryCtaText}</span>
+              </a>
+            )}
+          </div>
+
+          {/* Quick Info & Trust Strip */}
+          <div className="pt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-white/80 border-t border-white/15">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-semibold text-white">Kitchen Open & Preparing</span>
             </div>
+            <div className="hidden sm:block h-3 w-px bg-white/20" />
+            <span>Doorstep Delivery & Counter Pickup</span>
+            <div className="hidden sm:block h-3 w-px bg-white/20" />
+            <span>Average ETA: 30–45 mins</span>
           </div>
         </div>
       </section>
@@ -370,10 +395,10 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                   <div className="pt-2 px-1 flex items-center justify-between border-t border-black/5 mt-auto">
                     <div className="flex flex-col">
                       <span className="text-[10px] text-[var(--text-muted)] line-through tabular-nums">
-                        ${original.toFixed(2)}
+                        {formatCurrency(original, restaurant.currency || restaurant.ordering?.currency)}
                       </span>
                       <span className="text-sm font-extrabold text-[var(--text)] tabular-nums">
-                        ${discounted.toFixed(2)}
+                        {formatCurrency(discounted, restaurant.currency || restaurant.ordering?.currency)}
                       </span>
                     </div>
 

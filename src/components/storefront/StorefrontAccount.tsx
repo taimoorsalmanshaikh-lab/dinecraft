@@ -3,6 +3,7 @@ import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { Restaurant, Order, OrderStatus } from '../../types';
 import { StorefrontCheckoutAuth } from './StorefrontCheckoutAuth';
+import { formatCurrency } from '../../lib/currency';
 import {
   User,
   ShoppingBag,
@@ -44,6 +45,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
     logout,
     isAuthLoading,
   } = useDineCraft();
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>(initialTab);
 
@@ -329,7 +331,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
 
                           <div className="flex items-center gap-3">
                             <span className="font-mono text-base font-bold text-[var(--text,#111827)]">
-                              ${order.total.toFixed(2)}
+                              {formatCurrency(order.total, currency)}
                             </span>
                             <button
                               type="button"
@@ -392,7 +394,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
 
                           <div className="flex items-center gap-3">
                             <span className="font-mono text-sm font-semibold text-[var(--text,#111827)]">
-                              ${order.total.toFixed(2)}
+                              {formatCurrency(order.total, currency)}
                             </span>
                             <button
                               type="button"
@@ -642,7 +644,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
                       {item.quantity}x {item.name}
                     </span>
                     <span className="font-mono font-semibold tabular-nums text-[var(--text,#111827)]">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity, currency)}
                     </span>
                   </div>
                 ))}
@@ -653,15 +655,15 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
             <div className="pt-2 border-t border-black/5 space-y-1 text-xs">
               <div className="flex justify-between text-[var(--text-muted,#6B7280)]">
                 <span>Subtotal</span>
-                <span className="font-mono">${selectedOrder.subtotal.toFixed(2)}</span>
+                <span className="font-mono">{formatCurrency(selectedOrder.subtotal, currency)}</span>
               </div>
               <div className="flex justify-between text-[var(--text-muted,#6B7280)]">
                 <span>Delivery Fee</span>
-                <span className="font-mono">${selectedOrder.deliveryFee.toFixed(2)}</span>
+                <span className="font-mono">{formatCurrency(selectedOrder.deliveryFee, currency)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-[var(--text,#111827)] pt-1 border-t border-black/5">
                 <span>Total</span>
-                <span className="font-mono">${selectedOrder.total.toFixed(2)}</span>
+                <span className="font-mono">{formatCurrency(selectedOrder.total, currency)}</span>
               </div>
             </div>
           </div>

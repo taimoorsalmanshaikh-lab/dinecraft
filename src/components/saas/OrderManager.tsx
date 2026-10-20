@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { Order, OrderStatus } from '../../types';
 import { getAvatarColor, getInitial } from '../../lib/avatarUtils';
+import { formatCurrency } from '../../lib/currency';
 import { BentoCard } from '../dashboard/shared/BentoCard';
 import { DataTable } from '../dashboard/shared/DataTable';
 import {
@@ -14,15 +15,19 @@ import {
   Phone,
   Clock,
   ArrowRight,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export const OrderManager: React.FC = () => {
   const { activeRestaurant, getOrders, updateOrderStatus } = useDineCraft();
   const rawOrders = getOrders(activeRestaurant.id);
+  const currency = activeRestaurant.ordering?.currency || activeRestaurant.currency || '$';
 
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   const statusList: Array<OrderStatus | 'all'> = [
     'all',
@@ -36,16 +41,43 @@ export const OrderManager: React.FC = () => {
 
   const orders = useMemo(() => {
     const seen = new Set<string>();
+    const trimmed = searchQuery.trim().toLowerCase();
+    const cleanId = trimmed.replace(/^#+/, '').trim();
+    const cleanDigits = trimmed.replace(/[^0-9]/g, '');
+
     return rawOrders.filter((o) => {
       if (!o || !o.id || seen.has(o.id)) return false;
       seen.add(o.id);
+
+      const orderIdLower = (o.id || '').toLowerCase();
+      const orderIdWithHash = `#${orderIdLower}`;
+      const orderNumStr = String(o.orderNumber || '');
+
+      // Check if searching for a unique Order ID
+      const matchesId =
+        (cleanId.length > 0 && (orderIdLower === cleanId || orderIdLower.includes(cleanId))) ||
+        (trimmed.length > 0 && (orderIdWithHash === trimmed || orderIdWithHash.includes(trimmed))) ||
+        (orderNumStr.length > 0 && (cleanId === orderNumStr || cleanDigits === orderNumStr));
+
+      // Direct ID search bypasses status filter so admin immediately finds the order
+      const isDirectIdSearch = cleanId.length >= 3 && (cleanId.startsWith('ord') || orderIdLower.includes(cleanId));
       const matchesStatus =
-        selectedStatus === 'all' || o.status === selectedStatus;
-      const matchesSearch =
-        o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.customerPhone.includes(searchQuery);
-      return matchesStatus && matchesSearch;
+        selectedStatus === 'all' || o.status === selectedStatus || isDirectIdSearch;
+
+      if (!matchesStatus) return false;
+      if (!trimmed) return true;
+
+      // Other search fields
+      const matchesName = Boolean(o.customerName && o.customerName.toLowerCase().includes(trimmed));
+      const customerPhoneDigits = (o.customerPhone || '').replace(/[^0-9]/g, '');
+      const matchesPhone = Boolean(
+        o.customerPhone &&
+          (o.customerPhone.includes(trimmed) ||
+            (cleanDigits.length >= 3 && customerPhoneDigits.includes(cleanDigits)))
+      );
+      const matchesEmail = Boolean(o.customerEmail && o.customerEmail.toLowerCase().includes(trimmed));
+
+      return matchesId || matchesName || matchesPhone || matchesEmail;
     });
   }, [rawOrders, selectedStatus, searchQuery]);
 
@@ -75,11 +107,30 @@ export const OrderManager: React.FC = () => {
     },
     {
       key: 'id',
-      header: 'Order ID',
+      header: 'Unique Order ID',
       render: (order: Order) => (
-        <span className="font-mono text-xs font-semibold text-[#4B5563]">
-          #{order.id.slice(-6)}
-        </span>
+        <div className="flex items-center gap-1.5 group/id">
+          <span className="font-mono text-xs font-bold text-[#111827] bg-[#F3F4F6] px-2 py-0.5 rounded-md border border-slate-200/60 select-all tracking-tight">
+            #{order.id}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(order.id);
+              setCopiedOrderId(order.id);
+              setTimeout(() => setCopiedOrderId(null), 2000);
+            }}
+            title="Copy Order ID"
+            className="p-1 text-slate-400 hover:text-[#FF6900] transition-colors cursor-pointer"
+          >
+            {copiedOrderId === order.id ? (
+              <Check className="w-3 h-3 text-emerald-600" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
+          </button>
+        </div>
       ),
     },
     {
@@ -134,7 +185,7 @@ export const OrderManager: React.FC = () => {
       header: 'Total Due',
       render: (order: Order) => (
         <span className="text-xs font-black text-[#111827] tabular-nums">
-          ${order.total.toFixed(2)}
+          {formatCurrency(order.total, currency)}
         </span>
       ),
     },
@@ -187,6 +238,12 @@ export const OrderManager: React.FC = () => {
     },
   ];
 
+  const emptyMessage = searchQuery.trim()
+    ? `No orders found matching "${searchQuery.trim()}". Please verify the customer's Order ID or contact details.`
+    : selectedStatus !== 'all'
+    ? `No orders currently in "${selectedStatus}" status.`
+    : 'No orders placed yet. Place a test order from your storefront!';
+
   return (
     <div className="space-y-5">
       {/* Search and Status Filter Pills */}
@@ -213,13 +270,13 @@ export const OrderManager: React.FC = () => {
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[240px]">
+        <div className="relative min-w-[280px] sm:min-w-[340px]">
           <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by customer or ID..."
+            placeholder="Search by Order ID (e.g. #ORD-1024), customer name, or phone..."
             className="w-full pl-9 pr-4 py-2 bg-white rounded-full text-xs font-semibold text-[#111827] placeholder:text-[#9CA3AF] shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.04)] border-none focus:ring-2 focus:ring-[#FF6900] focus:outline-hidden"
           />
         </div>
@@ -240,7 +297,7 @@ export const OrderManager: React.FC = () => {
           data={orders}
           keyExtractor={(o) => o.id}
           onRowClick={(order) => setSelectedOrder(order)}
-          emptyMessage="No orders matching this filter."
+          emptyMessage={emptyMessage}
         />
       </BentoCard>
 
@@ -258,11 +315,29 @@ export const OrderManager: React.FC = () => {
               <div className="flex items-start justify-between pb-4 border-b border-slate-100">
                 <div>
                   <span className="text-[10px] font-bold text-[#FF6900] uppercase tracking-wider">
-                    Order Details
+                    Order Details & Storefront Reference
                   </span>
-                  <h3 className="text-xl font-black text-[#111827] font-mono mt-0.5">
-                    #{selectedOrder.id}
-                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <h3 className="text-xl font-black text-[#111827] font-mono">
+                      #{selectedOrder.id}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedOrder.id);
+                        setCopiedOrderId(selectedOrder.id);
+                        setTimeout(() => setCopiedOrderId(null), 2000);
+                      }}
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#FF6900] hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Copy Unique Order Reference"
+                    >
+                      {copiedOrderId === selectedOrder.id ? (
+                        <Check className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-xs text-[#9CA3AF] mt-0.5 font-medium">
                     Placed: {new Date(selectedOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -339,7 +414,9 @@ export const OrderManager: React.FC = () => {
                   {selectedOrder.items.map((it, idx) => (
                     <div key={idx} className="py-2 flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#111827]">{it.quantity}× {it.name}</span>
-                      <span className="font-black text-[#111827] tabular-nums">${(it.price * it.quantity).toFixed(2)}</span>
+                      <span className="font-black text-[#111827] tabular-nums">
+                        {formatCurrency(it.price * it.quantity, currency)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -347,15 +424,21 @@ export const OrderManager: React.FC = () => {
                 <div className="pt-3 border-t border-slate-100 space-y-1.5 text-xs">
                   <div className="flex justify-between text-[#9CA3AF]">
                     <span>Subtotal</span>
-                    <span className="tabular-nums font-semibold">${selectedOrder.subtotal.toFixed(2)}</span>
+                    <span className="tabular-nums font-semibold">
+                      {formatCurrency(selectedOrder.subtotal, currency)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-[#9CA3AF]">
                     <span>Delivery Fee</span>
-                    <span className="tabular-nums font-semibold">${selectedOrder.deliveryFee.toFixed(2)}</span>
+                    <span className="tabular-nums font-semibold">
+                      {formatCurrency(selectedOrder.deliveryFee, currency)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-base font-black text-[#111827] pt-2 border-t border-slate-200">
                     <span>Total Due (COD)</span>
-                    <span className="tabular-nums">${selectedOrder.total.toFixed(2)}</span>
+                    <span className="tabular-nums font-bold">
+                      {formatCurrency(selectedOrder.total, currency)}
+                    </span>
                   </div>
                 </div>
               </div>

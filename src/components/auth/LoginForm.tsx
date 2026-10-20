@@ -28,7 +28,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   initialMode = 'login',
   onModeChange,
 }) => {
-  const { navigate } = useRouter();
+  const { navigate, currentPath, routeMatch } = useRouter();
   const { login, signup, signInWithGoogle, currentUser } = useDineCraft();
 
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
@@ -68,12 +68,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setMode(initialMode);
   }, [initialMode]);
 
-  // If already logged in, redirect to dashboard
+  // If already logged in, redirect to dashboard only on SaaS auth/root paths, never on storefront paths
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !routeMatch.isStorefront && (currentPath === '/' || currentPath === '/login' || currentPath === '/signup' || routeMatch.isAuth)) {
       navigate('/dashboard');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, currentPath, routeMatch]);
 
   const switchMode = (newMode: 'login' | 'signup') => {
     setMode(newMode);

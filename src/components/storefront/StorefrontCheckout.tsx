@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { BURGER_HERO_IMAGE } from '../../data/mockData';
+import { formatCurrency } from '../../lib/currency';
 
 interface StorefrontCheckoutProps {
   restaurant: Restaurant;
@@ -35,7 +36,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
   const cart = getCart(restaurant.id);
   const subtotal = getCartSubtotal(restaurant.id);
 
-  const currency = restaurant.currency || '$';
+  const currency = restaurant.currency || restaurant.ordering?.currency || '$';
   const isFreeDeliveryEligible =
     Boolean(restaurant.freeDelivery) ||
     restaurant.deliveryFee === 0 ||
@@ -101,7 +102,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
       errs.deliveryAddress = 'Street delivery address is required for doorstep delivery';
     }
     if (subtotal < minOrderAmount) {
-      errs.subtotal = `Order subtotal must meet minimum $${minOrderAmount.toFixed(2)}`;
+      errs.subtotal = `Order subtotal must meet minimum ${formatCurrency(minOrderAmount, currency)}`;
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -109,7 +110,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
 
   const handleNextFromStep1 = () => {
     if (subtotal < minOrderAmount) {
-      setErrors({ subtotal: `Order subtotal must meet minimum $${minOrderAmount.toFixed(2)}` });
+      setErrors({ subtotal: `Order subtotal must meet minimum ${formatCurrency(minOrderAmount, currency)}` });
       return;
     }
     setErrors({});
@@ -354,7 +355,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
                   <div>
                     <h3 className="text-sm font-bold text-[var(--text)]">Doorstep Delivery</h3>
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      Fee: ${deliveryFeeConfig.toFixed(2)} · ETA 30–45 mins
+                      Fee: {deliveryFeeConfig > 0 ? formatCurrency(deliveryFeeConfig, currency) : 'Free'} · ETA 30–45 mins
                     </p>
                   </div>
                 </button>
@@ -706,7 +707,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
                         </span>
                       </div>
                       <span className="font-mono text-[var(--text)] font-semibold tabular-nums">
-                        ${(ci.price * ci.quantity).toFixed(2)}
+                        {formatCurrency(ci.price * ci.quantity, currency)}
                       </span>
                     </div>
                   ))}
@@ -732,7 +733,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
                     <span>Placing Order...</span>
                   ) : (
                     <>
-                      <span>Place Order · ${total.toFixed(2)}</span>
+                      <span>Place Order · {formatCurrency(total, currency)}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -753,7 +754,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
             >
               <span>Order Summary ({cart.length} items)</span>
               <div className="flex items-center gap-2">
-                <span className="tabular-nums font-mono">${total.toFixed(2)}</span>
+                <span className="tabular-nums font-mono">{formatCurrency(total, currency)}</span>
                 {mobileSummaryOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
             </button>
@@ -789,7 +790,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
                       <p className="text-[11px] text-[var(--text-muted)]">Qty: {item.quantity}</p>
                     </div>
                     <span className="text-xs font-bold text-[var(--text)] tabular-nums">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity, currency)}
                     </span>
                   </div>
                 );
@@ -801,13 +802,13 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
                 <span className="font-semibold text-[var(--text)] tabular-nums">
-                  ${subtotal.toFixed(2)}
+                  {formatCurrency(subtotal, currency)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Delivery Fee</span>
                 <span className="font-semibold text-[var(--text)] tabular-nums">
-                  {deliveryFee > 0 ? `$${deliveryFee.toFixed(2)}` : 'Free'}
+                  {deliveryFee > 0 ? formatCurrency(deliveryFee, currency) : 'Free'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
@@ -819,7 +820,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({ restaura
               <div className="flex items-center justify-between pt-2 border-t border-black/5 text-sm font-bold text-[var(--text)]">
                 <span>Total Due</span>
                 <span className="tabular-nums">
-                  ${total.toFixed(2)}
+                  {formatCurrency(total, currency)}
                 </span>
               </div>
             </div>

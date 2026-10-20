@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getStorefrontThemeStyle } from './themeUtils';
 import { CartDrawer } from './CartDrawer';
+import { formatCurrency } from '../../lib/currency';
 
 interface StorefrontLayoutProps {
   restaurant: Restaurant;
@@ -37,6 +38,7 @@ export const StorefrontLayout: React.FC<StorefrontLayoutProps> = ({
   const { getCart, getCartSubtotal, currentUser, userProfile } = useDineCraft();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const cart = getCart(restaurant.id);
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -111,7 +113,7 @@ export const StorefrontLayout: React.FC<StorefrontLayoutProps> = ({
             </span>
             <span className="text-black/15 hidden sm:inline">·</span>
             <span className="font-mono text-[10px] text-[var(--text-muted)]">
-              Min Order: ${restaurant.minimumOrder?.toFixed(2) || '15.00'}
+              Min Order: {formatCurrency(restaurant.minimumOrder || 15, currency)}
             </span>
           </div>
         </div>
@@ -197,7 +199,7 @@ export const StorefrontLayout: React.FC<StorefrontLayoutProps> = ({
                 )}
                 {subtotal > 0 && (
                   <span className="hidden md:inline font-mono text-[11px] pl-1 border-l border-white/25 tabular-nums">
-                    ${subtotal.toFixed(2)}
+                    {formatCurrency(subtotal, currency)}
                   </span>
                 )}
               </button>

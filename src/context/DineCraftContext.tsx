@@ -124,6 +124,28 @@ export const BLANK_RESTAURANT: Restaurant = {
     reviews: false,
   },
   content: {
+    heroTagline: '',
+    heroHeading: '',
+    heroHeadingHighlight: '',
+    heroSubtext: '',
+    heroPrimaryCtaText: '',
+    heroSecondaryCtaText: '',
+    featuresStrip: [],
+    favoritesEyebrow: '',
+    favoritesTitle: '',
+    reservationBanner: {
+      enabled: false,
+      eyebrow: '',
+      title: '',
+      text: '',
+      buttonLabel: '',
+      badges: [],
+    },
+    stats: [],
+    about: {
+      title: '',
+      story: '',
+    },
     footerText: '',
   },
 };
@@ -167,7 +189,7 @@ interface DineCraftContextType {
 
   // Assets Library
   assets: AssetItem[];
-  uploadAsset: (fileData: { name: string; url: string; type?: 'image' | 'video' }) => Promise<AssetItem>;
+  uploadAsset: (fileData: { name: string; url: string; type?: 'image' | 'video'; size?: string }) => Promise<AssetItem>;
   deleteAsset: (assetId: string) => Promise<void>;
 
   // Orders
@@ -291,54 +313,81 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [restaurants, activeRestaurantId]);
 
   // Listen to Client-Side Auth state
+  // The auth gate (isAuthLoading) must only depend on the session check, never on database
+  // queries - otherwise a slow/blocked query leaves the UI stuck on "Verifying credentials...".
   useEffect(() => {
-    const unsubscribe = subscribeToAuthState(async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        try {
-          const profile = await getUserProfile(user.uid);
-          if (profile) {
-            setUserProfile(profile);
-          } else {
-            setUserProfile({
-              uid: user.uid,
-              email: user.email || '',
-              name: user.displayName || user.email?.split('@')[0] || 'Restaurant Owner',
-              role: 'owner',
-              createdAt: new Date().toISOString(),
-            });
-          }
-        } catch (e) {
-          console.warn('Failed to load user profile:', e);
-        }
+    let lastUid: string | null = null;
+    let disposed = false;
 
-        try {
-          const userRestos = await getOwnerRestaurants(user.uid);
-          setRestaurants(userRestos);
-          const savedId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID);
-          const validSaved = userRestos.some((r) => r.id === savedId);
-          if (validSaved && savedId) {
-            setActiveRestaurantIdState(savedId);
-          } else if (userRestos.length > 0) {
-            setActiveRestaurantIdState(userRestos[0].id);
-          } else {
-            setActiveRestaurantIdState('');
+    // Safety net: never block the UI on auth for more than a few seconds
+    const safetyTimer = setTimeout(() => {
+      if (!disposed) setIsAuthLoading(false);
+    }, 4000);
+
+    const loadUserData = async (user: User) => {
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (disposed) return;
+        setUserProfile(
+          profile || {
+            uid: user.uid,
+            email: user.email || '',
+            name: user.displayName || user.email?.split('@')[0] || 'Restaurant Owner',
+            role: 'owner',
+            createdAt: new Date().toISOString(),
           }
-        } catch (e) {
-          console.warn('Failed to load restaurants:', e);
+        );
+      } catch (e) {
+        console.warn('Failed to load user profile:', e);
+      }
+
+      try {
+        const userRestos = await getOwnerRestaurants(user.uid);
+        if (disposed) return;
+        setRestaurants(userRestos);
+        const savedId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID);
+        const validSaved = userRestos.some((r) => r.id === savedId);
+        if (validSaved && savedId) {
+          setActiveRestaurantIdState(savedId);
+        } else if (userRestos.length > 0) {
+          setActiveRestaurantIdState(userRestos[0].id);
+        } else {
+          setActiveRestaurantIdState('');
+        }
+      } catch (e) {
+        console.warn('Failed to load restaurants:', e);
+        if (!disposed) {
           setRestaurants([]);
           setActiveRestaurantIdState('');
         }
+      }
+    };
+
+    const unsubscribe = subscribeToAuthState((user) => {
+      if (disposed) return;
+      setCurrentUser(user);
+      // Auth is resolved as soon as we know whether a session exists
+      setIsAuthLoading(false);
+
+      if (user) {
+        if (lastUid !== user.uid) {
+          lastUid = user.uid;
+          void loadUserData(user); // fire-and-forget, does not block the UI
+        }
       } else {
+        lastUid = null;
         setUserProfile(null);
         setRestaurants([]);
         setActiveRestaurantIdState('');
         setOrders([]);
       }
-      setIsAuthLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      disposed = true;
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, []);
 
   // Subscribe to live customer orders when a customer is logged in
@@ -414,13 +463,14 @@ export const DineCraftProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [activeRestaurant.id]);
 
-  const uploadAsset = async (fileData: { name: string; url: string; type?: 'image' | 'video' }): Promise<AssetItem> => {
+  const uploadAsset = async (fileData: { name: string; url: string; type?: 'image' | 'video'; size?: string }): Promise<AssetItem> => {
     const newAsset: AssetItem = {
       id: `asset_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       restaurantId: activeRestaurant.id,
       name: fileData.name,
       url: fileData.url,
       type: fileData.type || 'image',
+      size: fileData.size,
       createdAt: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     await saveAsset(newAsset);

@@ -8,7 +8,7 @@ interface AuthPagesProps {
 }
 
 export const AuthPages: React.FC<AuthPagesProps> = ({ type }) => {
-  const { navigate } = useRouter();
+  const { navigate, currentPath, routeMatch } = useRouter();
   const { login, signup, signInWithGoogle, currentUser } = useDineCraft();
 
   const isLogin = type === 'login';
@@ -23,12 +23,12 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ type }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // If already logged in, redirect to dashboard
+  // If already logged in, redirect to dashboard only on SaaS auth/root paths, never on storefront
   React.useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !routeMatch.isStorefront && (currentPath === '/' || currentPath === '/login' || currentPath === '/signup' || routeMatch.isAuth)) {
       navigate('/dashboard');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, currentPath, routeMatch]);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -140,7 +140,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ type }) => {
           )}
 
           {/* Real Google Sign-In (Only on login, removed from signup) */}
-          {mode === 'login' && (
+          {isLogin && (
             <div>
               <button
                 type="button"

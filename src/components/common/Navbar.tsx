@@ -63,15 +63,28 @@ export const Navbar: React.FC = () => {
             >
               Pricing
             </button>
-            {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (
-              <button
-                onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
-                className="hover:text-orange-600 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>Live Storefront</span>
-                <span className="text-[10px] bg-orange-100 text-orange-800 font-semibold px-1.5 py-0.5 rounded">Live</span>
-              </button>
-            )}
+            {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (() => {
+              const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+              return (
+                <button
+                  onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
+                  disabled={!isStorefrontReady}
+                  title={!isStorefrontReady ? 'Publish your store first' : 'Open live storefront'}
+                  className={`transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                    isStorefrontReady
+                      ? 'hover:text-orange-600 cursor-pointer text-slate-600'
+                      : 'opacity-50 cursor-not-allowed text-slate-400'
+                  }`}
+                >
+                  <span>Live Storefront</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                    isStorefrontReady ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {isStorefrontReady ? 'Live' : 'Draft'}
+                  </span>
+                </button>
+              );
+            })()}
           </nav>
 
           {/* Zone 3: 1 primary CTA action + Auth link */}
@@ -153,17 +166,27 @@ export const Navbar: React.FC = () => {
           >
             Pricing
           </button>
-          {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (
-            <button
-              onClick={() => {
-                openStorefrontInNewTab(activeRestaurant.slug);
-                setMobileMenuOpen(false);
-              }}
-              className="block w-full text-left py-2 text-sm font-medium text-orange-600 cursor-pointer"
-            >
-              Live Storefront ({activeRestaurant.name})
-            </button>
-          )}
+          {activeRestaurant && activeRestaurant.id !== 'new_restaurant' && (() => {
+            const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+            return (
+              <button
+                onClick={() => {
+                  if (!isStorefrontReady) return;
+                  openStorefrontInNewTab(activeRestaurant.slug);
+                  setMobileMenuOpen(false);
+                }}
+                disabled={!isStorefrontReady}
+                title={!isStorefrontReady ? 'Publish your store first' : undefined}
+                className={`block w-full text-left py-2 text-sm font-medium ${
+                  isStorefrontReady
+                    ? 'text-orange-600 cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed text-slate-400'
+                }`}
+              >
+                Live Storefront ({activeRestaurant.name})
+              </button>
+            );
+          })()}
           <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
             <button
               onClick={() => {

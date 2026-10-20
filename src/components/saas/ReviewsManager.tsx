@@ -172,14 +172,28 @@ export const ReviewsManager: React.FC = () => {
             <span>Refresh</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => openStorefrontInNewTab(activeRestaurant.slug, 'reviews')}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF6900] hover:bg-[#e05d00] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
-          >
-            <span>Public Reviews Page</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+          {(() => {
+            const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isStorefrontReady) return;
+                  openStorefrontInNewTab(activeRestaurant.slug, 'reviews');
+                }}
+                disabled={!isStorefrontReady}
+                title={!isStorefrontReady ? 'Publish your store first' : undefined}
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-colors ${
+                  isStorefrontReady
+                    ? 'bg-[#FF6900] hover:bg-[#e05d00] text-white cursor-pointer'
+                    : 'bg-[#FF6900]/50 opacity-50 cursor-not-allowed text-white'
+                }`}
+              >
+                <span>Public Reviews Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            );
+          })()}
         </div>
       </div>
 

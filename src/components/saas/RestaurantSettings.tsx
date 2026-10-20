@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Sparkles,
   Link as LinkIcon,
+  Image as ImageIcon,
 } from 'lucide-react';
 import {
   isValidSubdomain,
@@ -19,6 +20,7 @@ import {
   openStorefrontInNewTab,
 } from '../../lib/subdomain';
 import { checkSlugAvailable } from '../../services/restaurantService';
+import { AssetPickerModal } from './AssetPickerModal';
 
 export const RestaurantSettings: React.FC = () => {
   const { activeRestaurant, updateRestaurant, restaurants, addToast } = useDineCraft();
@@ -32,6 +34,7 @@ export const RestaurantSettings: React.FC = () => {
   >('idle');
   const [subdomainMessage, setSubdomainMessage] = useState('');
   const [suggestedSlug, setSuggestedSlug] = useState<string | null>(null);
+  const [assetPickerTarget, setAssetPickerTarget] = useState<'logo' | 'banner' | null>(null);
 
   const logoOptions = ['🍔', '🍕', '🌮', '🍗', '🍲', '☕', '🥐', '🥩', '🥗', '🍩', '🍣', '🍰'];
 
@@ -130,8 +133,14 @@ export const RestaurantSettings: React.FC = () => {
       return;
     }
 
+    const updatedCurrency = form.currency || '$';
     updateRestaurant({
       ...form,
+      currency: updatedCurrency,
+      ordering: {
+        ...(form.ordering || {} as any),
+        currency: updatedCurrency,
+      },
       slug: cleanSlug,
       subdomain: cleanSlug,
     });
@@ -169,25 +178,87 @@ export const RestaurantSettings: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Brand Logo Icon
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {logoOptions.map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => setForm({ ...form, logo: em })}
-                    className={`w-9 h-9 text-lg rounded-xl border flex items-center justify-center transition-all ${
-                      form.logo === em
-                        ? 'border-orange-600 bg-orange-50 font-bold scale-105'
-                        : 'border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    {em}
-                  </button>
-                ))}
+            <div className="sm:col-span-2 space-y-3 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  Brand Logo / Identity Mark
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                    {form.logo && (form.logo.startsWith('http') || form.logo.startsWith('data:') || form.logo.startsWith('/')) ? (
+                      <img src={form.logo} alt="Brand Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-2xl">{form.logo || '🍽️'}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAssetPickerTarget('logo')}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-[#FF6900] font-bold text-xs border border-orange-200 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Select Logo from Assets</span>
+                      </button>
+                      {form.logo && (form.logo.startsWith('http') || form.logo.startsWith('data:')) && (
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, logo: '🍽️', logoUrl: '' })}
+                          className="px-2.5 py-2 rounded-xl bg-slate-200/70 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition-colors cursor-pointer"
+                        >
+                          Reset to Emoji
+                        </button>
+                      )}
+                    </div>
+                    {/* Emoji Quick Picker */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {logoOptions.map((em) => (
+                        <button
+                          key={em}
+                          type="button"
+                          onClick={() => setForm({ ...form, logo: em, logoUrl: '' })}
+                          className={`w-7 h-7 text-sm rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+                            form.logo === em
+                              ? 'border-orange-600 bg-orange-50 font-bold scale-105'
+                              : 'border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Storefront Hero Cover Banner */}
+              <div className="pt-3 border-t border-slate-200/60">
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  Storefront Hero Cover Banner
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div className="w-24 h-14 rounded-xl bg-slate-200 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                    {form.banner || form.bannerUrl ? (
+                      <img src={form.banner || form.bannerUrl} alt="Storefront Banner" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => setAssetPickerTarget('banner')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-[#FF6900] font-bold text-xs border border-orange-200 shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Select Banner from Assets</span>
+                    </button>
+                    <p className="text-[10px] text-slate-400">
+                      High resolution panoramic photo shown on your digital storefront header.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -426,14 +497,31 @@ export const RestaurantSettings: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
               3. Storefront Subdomain & Address
             </h3>
-            <button
-              type="button"
-              onClick={() => openStorefrontInNewTab(form.slug || activeRestaurant.slug)}
-              className="text-[11px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
-            >
-              <span>Visit Live Store</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
+            {(() => {
+              const isStorefrontReady = Boolean(
+                (form.slug || activeRestaurant?.slug) &&
+                activeRestaurant.websiteStatus === 'published'
+              );
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isStorefrontReady) return;
+                    openStorefrontInNewTab(form.slug || activeRestaurant.slug);
+                  }}
+                  disabled={!isStorefrontReady}
+                  title={!isStorefrontReady ? 'Publish your store first' : 'Visit Live Store'}
+                  className={`text-[11px] font-bold flex items-center gap-1 ${
+                    isStorefrontReady
+                      ? 'text-orange-600 hover:text-orange-700 cursor-pointer'
+                      : 'opacity-50 cursor-not-allowed text-slate-400'
+                  }`}
+                >
+                  <span>Visit Live Store</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              );
+            })()}
           </div>
 
           <div className="text-xs space-y-2">
@@ -603,6 +691,31 @@ export const RestaurantSettings: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Asset Picker Modal for Logo / Banner */}
+      <AssetPickerModal
+        isOpen={assetPickerTarget !== null}
+        onClose={() => setAssetPickerTarget(null)}
+        onSelect={(url) => {
+          if (assetPickerTarget === 'logo') {
+            setForm((prev) => ({ ...prev, logo: url, logoUrl: url }));
+          } else if (assetPickerTarget === 'banner') {
+            setForm((prev) => ({ ...prev, banner: url, bannerUrl: url }));
+          }
+          setAssetPickerTarget(null);
+        }}
+        restaurantId={activeRestaurant.id}
+        title={
+          assetPickerTarget === 'logo'
+            ? 'Select Brand Logo from Assets'
+            : 'Select Storefront Banner from Assets'
+        }
+        currentSelectedUrl={
+          assetPickerTarget === 'logo'
+            ? form.logo
+            : form.banner || form.bannerUrl
+        }
+      />
     </div>
   );
 };

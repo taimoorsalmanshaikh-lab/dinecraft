@@ -20,6 +20,9 @@ import {
   Award,
 } from 'lucide-react';
 
+import { calculateRevenueMetrics } from '../../lib/revenueUtils';
+import { formatCurrency } from '../../lib/currency';
+
 export const DashboardOverview: React.FC = () => {
   const { navigate } = useRouter();
   const { activeRestaurant, getOrders, getMenuItems, updateOrderStatus } = useDineCraft();
@@ -35,36 +38,16 @@ export const DashboardOverview: React.FC = () => {
   }, [rawOrders]);
 
   const menuItems = getMenuItems(activeRestaurant.id);
+  const currency = activeRestaurant.ordering?.currency || activeRestaurant.currency || '$';
+
+  // Single shared calculation function that derives all metrics from real orders
+  const metrics = useMemo(() => {
+    return calculateRevenueMetrics(orders);
+  }, [orders]);
 
   const totalOrders = orders.length;
   const newOrders = orders.filter((o) => o.status === 'New').length;
   const completedOrders = orders.filter((o) => o.status === 'Completed').length;
-  const totalSales = orders.reduce((sum, o) => sum + (o.status !== 'Rejected' ? o.total : 0), 0);
-
-  // Today's estimated slice
-  const todaysRevenue = totalSales > 0 ? (totalSales * 0.42).toFixed(2) : '0.00';
-  const weeklyRevenue = totalSales > 0 ? (totalSales * 0.85).toFixed(2) : '0.00';
-
-  // Monthly orders bar chart data
-  const barChartData = [
-    { label: 'May', value: orders.length > 0 ? Math.floor(orders.length * 0.2) : 0 },
-    { label: 'Jun', value: orders.length > 0 ? Math.floor(orders.length * 0.3) : 0 },
-    { label: 'Jul', value: orders.length > 0 ? Math.floor(orders.length * 0.5) : 0 },
-    { label: 'Aug', value: orders.length > 0 ? Math.floor(orders.length * 0.6) : 0 },
-    { label: 'Sep', value: orders.length > 0 ? Math.floor(orders.length * 0.8) : 0 },
-    { label: 'Oct', value: orders.length, highlight: true },
-  ];
-
-  // Revenue area chart data
-  const areaChartData = [
-    { label: 'Mon', value: totalSales > 0 ? Math.round(totalSales * 0.1) : 0 },
-    { label: 'Tue', value: totalSales > 0 ? Math.round(totalSales * 0.12) : 0 },
-    { label: 'Wed', value: totalSales > 0 ? Math.round(totalSales * 0.14) : 0 },
-    { label: 'Thu', value: totalSales > 0 ? Math.round(totalSales * 0.16) : 0 },
-    { label: 'Fri', value: totalSales > 0 ? Math.round(totalSales * 0.2) : 0 },
-    { label: 'Sat', value: totalSales > 0 ? Math.round(totalSales * 0.18) : 0 },
-    { label: 'Sun', value: totalSales > 0 ? Math.round(totalSales * 0.1) : 0 },
-  ];
 
   // Top Items Calculation
   const topItems = useMemo(() => {
@@ -186,7 +169,7 @@ export const DashboardOverview: React.FC = () => {
       header: 'Amount',
       render: (order: Order) => (
         <span className="text-xs font-black text-[#111827] tabular-nums">
-          ${order.total.toFixed(2)}
+          {formatCurrency(order.total, currency)}
         </span>
       ),
     },
@@ -249,42 +232,46 @@ export const DashboardOverview: React.FC = () => {
     <div className="space-y-5">
       {/* Row 1: HeroStatCard, Engagement Bar Chart, Area Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Col 1: HeroStatCard (Today's Revenue) */}
+        {/* Col 1: HeroStatCard (Today's Revenue calculated from real orders) */}
         <div className="lg:col-span-4 h-full">
           <HeroStatCard
             label="Today's Revenue"
-            value={`$${todaysRevenue}`}
-            badgeText="+18.4% today"
-            metaText="Live simulated feed"
+            value={formatCurrency(metrics.todaysRevenue, currency)}
+            badgeText={metrics.growthVsYesterdayPercent}
+            metaText={`${metrics.todaysOrderCount} ${metrics.todaysOrderCount === 1 ? 'order' : 'orders'} today`}
             onActionClick={() => navigate('/dashboard/orders')}
             className="h-full"
           />
         </div>
 
-        {/* Col 2: Engagement Bar Chart (Orders by month) */}
+        {/* Col 2: Engagement Bar Chart (Orders by month from real orders) */}
         <div className="lg:col-span-4 h-full">
           <BentoCard
             title="Orders by Month"
-            subtitle="Order volume trend"
+            subtitle="Real order trends"
             onArrowClick={() => navigate('/dashboard/orders')}
             className="h-full"
           >
             <div className="pt-2">
-              <BentoBarChart data={barChartData} height={150} />
+              <BentoBarChart data={metrics.monthlyOrdersTrend} height={150} />
             </div>
           </BentoCard>
         </div>
 
-        {/* Col 3: Area Chart (Revenue Curve) */}
+        {/* Col 3: Area Chart (Weekly Performance 7-day real revenue curve) */}
         <div className="lg:col-span-4 h-full">
           <BentoCard
             title="Weekly Performance"
-            subtitle="Simulated cash flow"
+            subtitle="7-day gross revenue"
             onArrowClick={() => navigate('/dashboard/orders')}
             className="h-full"
           >
             <div className="pt-1">
-              <BentoAreaChart data={areaChartData} height={150} />
+              <BentoAreaChart
+                data={metrics.weeklyPerformance}
+                height={150}
+                currencyPrefix={currency}
+              />
             </div>
           </BentoCard>
         </div>
@@ -298,8 +285,8 @@ export const DashboardOverview: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <StatTile
               label="Weekly Revenue"
-              value={`$${weeklyRevenue}`}
-              badge="+12.8%"
+              value={formatCurrency(metrics.weeklyRevenue, currency)}
+              badge={`${metrics.weeklyOrderCount} orders`}
               isPositive={true}
               subtext="7-day gross"
             />
@@ -308,7 +295,7 @@ export const DashboardOverview: React.FC = () => {
               value={`${totalOrders}`}
               badge={`${newOrders} new`}
               isPositive={newOrders === 0}
-              subtext="All time"
+              subtext={`${formatCurrency(metrics.totalRevenue, currency)} gross`}
             />
           </div>
 
@@ -427,7 +414,9 @@ export const DashboardOverview: React.FC = () => {
                     </div>
                     <div className="truncate">
                       <span className="text-xs font-bold text-[#111827] block truncate">{item.name}</span>
-                      <span className="text-[11px] text-[#9CA3AF] tabular-nums">${item.price.toFixed(2)}</span>
+                      <span className="text-[11px] text-[#9CA3AF] tabular-nums">
+                        {formatCurrency(item.price, currency)}
+                      </span>
                     </div>
                   </div>
                   <span className="text-xs font-black text-[#FF6900] bg-[#FFF1E6] px-2.5 py-1 rounded-full shrink-0 tabular-nums">

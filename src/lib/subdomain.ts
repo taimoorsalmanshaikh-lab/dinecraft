@@ -217,10 +217,13 @@ export function buildStorefrontUrl(
   path: string = ''
 ): string {
   const cleanSlug = (slug || '').toLowerCase().trim();
+  if (!cleanSlug || cleanSlug.startsWith('deleted_')) {
+    return '';
+  }
   const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
 
   if (typeof window === 'undefined') {
-    return cleanSlug ? `/${cleanSlug}${cleanPath}` : cleanPath || '/';
+    return `/${cleanSlug}${cleanPath}`;
   }
 
   const origin = window.location.origin;
@@ -253,7 +256,16 @@ export function buildStorefrontUrl(
  * - Called synchronously inside click handlers to prevent popup blocking.
  */
 export function openStorefrontInNewTab(slug: string, path: string = ''): void {
+  // An empty slug would open the SaaS root ("/"), which redirects logged-in owners to /dashboard.
+  if (!slug || !slug.trim() || slug.startsWith('deleted_')) {
+    console.warn('[DineCraft] Cannot open storefront: restaurant has no valid public slug yet.');
+    return;
+  }
   const url = buildStorefrontUrl(slug, path);
+  if (!url) {
+    console.warn('[DineCraft] Cannot open storefront: unable to build a valid storefront URL.');
+    return;
+  }
   if (typeof window !== 'undefined') {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
@@ -264,6 +276,10 @@ export function openStorefrontInNewTab(slug: string, path: string = ''): void {
  */
 export async function copyStorefrontUrl(slug: string, path: string = ''): Promise<string> {
   const url = buildStorefrontUrl(slug, path);
+  if (!url) {
+    console.warn('[DineCraft] Cannot copy storefront URL: invalid or empty slug.');
+    return '';
+  }
   if (typeof navigator !== 'undefined' && navigator.clipboard) {
     await navigator.clipboard.writeText(url);
   }

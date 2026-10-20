@@ -141,9 +141,11 @@ export const BentoBarChart: React.FC<BentoBarChartProps> = ({
   );
 };
 
-interface AreaDataPoint {
+export interface AreaDataPoint {
   label: string;
   value: number;
+  ordersCount?: number;
+  fullDate?: string;
 }
 
 interface BentoAreaChartProps {
@@ -159,26 +161,31 @@ export const BentoAreaChart: React.FC<BentoAreaChartProps> = ({
 }) => {
   const [metric, setMetric] = useState<'revenue' | 'orders'>('revenue');
 
-  // Multiplier for mock view toggle
-  const factor = metric === 'revenue' ? 1 : 0.08;
+  // Real data for revenue or orders without fake factor multipliers
   const processedData = data.map((d) => ({
     ...d,
-    val: Math.round(d.value * factor),
+    val: metric === 'revenue' ? Number(d.value || 0) : Number(d.ordersCount !== undefined ? d.ordersCount : 0),
   }));
 
-  const maxVal = Math.max(...processedData.map((d) => d.val), 10);
+  const maxVal = Math.max(...processedData.map((d) => d.val), metric === 'revenue' ? 50 : 5);
   const chartHeight = height - 40;
-  const total = processedData.reduce((acc, d) => acc + d.val, 0);
+
+  const totalRevenue = data.reduce((acc, d) => acc + (d.value || 0), 0);
+  const totalOrders = data.reduce(
+    (acc, d) => acc + (d.ordersCount !== undefined ? d.ordersCount : 0),
+    0
+  );
 
   // Build SVG path
   const points = processedData.map((d, idx) => {
-    const x = (idx / (processedData.length - 1)) * 340;
-    const y = chartHeight - (d.val / maxVal) * (chartHeight - 30);
-    return { x, y };
+    const divisor = processedData.length > 1 ? processedData.length - 1 : 1;
+    const x = (idx / divisor) * 340;
+    const y = maxVal > 0 ? chartHeight - (d.val / maxVal) * (chartHeight - 30) : chartHeight - 10;
+    return { x, y: isNaN(y) ? chartHeight - 10 : y, original: d };
   });
 
   // Smooth bezier curve
-  let curveD = `M ${points[0].x} ${points[0].y}`;
+  let curveD = points.length > 0 ? `M ${points[0].x} ${points[0].y}` : `M 0 ${chartHeight}`;
   for (let i = 0; i < points.length - 1; i++) {
     const curr = points[i];
     const next = points[i + 1];
@@ -186,7 +193,9 @@ export const BentoAreaChart: React.FC<BentoAreaChartProps> = ({
     curveD += ` C ${cpX} ${curr.y}, ${cpX} ${next.y}, ${next.x} ${next.y}`;
   }
 
-  const fillD = `${curveD} L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
+  const lastPoint = points.length > 0 ? points[points.length - 1] : { x: 340, y: chartHeight };
+  const firstPoint = points.length > 0 ? points[0] : { x: 0, y: chartHeight };
+  const fillD = `${curveD} L ${lastPoint.x} ${chartHeight} L ${firstPoint.x} ${chartHeight} Z`;
 
   return (
     <div className="w-full flex flex-col justify-between">
@@ -194,11 +203,16 @@ export const BentoAreaChart: React.FC<BentoAreaChartProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div>
           <span className="text-2xl sm:text-3xl font-black text-[#111827] tabular-nums">
-            {metric === 'revenue' ? `${currencyPrefix}${total.toLocaleString()}` : `${total} orders`}
+            {metric === 'revenue'
+              ? `${currencyPrefix}${totalRevenue.toFixed(2)}`
+              : `${totalOrders} ${totalOrders === 1 ? 'order' : 'orders'}`}
           </span>
+          <p className="text-[10px] text-[#9CA3AF] font-medium mt-0.5">
+            {metric === 'revenue' ? 'Past 7 days gross revenue' : 'Past 7 days completed orders'}
+          </p>
         </div>
 
-        {/* Send/Receive style pill toggle replaced by Orders / Revenue */}
+        {/* Real toggle between Revenue & Orders */}
         <div className="bg-[#F3F4F6] p-1 rounded-full inline-flex items-center gap-1 text-[11px] font-bold">
           <button
             type="button"

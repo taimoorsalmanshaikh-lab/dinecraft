@@ -157,19 +157,33 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
         {/* View Storefront Link */}
         <div className="pt-3 mt-3 border-t border-slate-100">
-          <button
-            onClick={() => {
-              openStorefrontInNewTab(activeRestaurant.slug);
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-orange-700 bg-orange-50/80 hover:bg-orange-100/80 border border-orange-200/60 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-2.5 truncate">
-              <ExternalLink className="w-4 h-4 text-orange-600 shrink-0" />
-              <span className="truncate">View Public Website</span>
-            </div>
-            <span className="text-[10px] text-orange-500 font-mono">/{activeRestaurant.slug}</span>
-          </button>
+          {(() => {
+            const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+            return (
+              <button
+                onClick={() => {
+                  if (!isStorefrontReady) return;
+                  openStorefrontInNewTab(activeRestaurant.slug);
+                  if (onCloseMobile) onCloseMobile();
+                }}
+                disabled={!isStorefrontReady}
+                title={!isStorefrontReady ? 'Publish your store first' : 'View Public Website'}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${
+                  isStorefrontReady
+                    ? 'text-orange-700 bg-orange-50/80 hover:bg-orange-100/80 border-orange-200/60 cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed text-slate-400 bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <ExternalLink className={`w-4 h-4 shrink-0 ${isStorefrontReady ? 'text-orange-600' : 'text-slate-400'}`} />
+                  <span className="truncate">View Public Website</span>
+                </div>
+                <span className={`text-[10px] font-mono ${isStorefrontReady ? 'text-orange-500' : 'text-slate-400'}`}>
+                  {activeRestaurant.slug ? `/${activeRestaurant.slug}` : 'Unpublished'}
+                </span>
+              </button>
+            );
+          })()}
         </div>
       </nav>
 

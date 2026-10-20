@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "test:customer": "tsx src/services/customerIdentification.test.ts",
     "test:storefront": "tsx src/services/storefrontRouting.test.ts",
-    "test": "tsx src/services/storefrontRouting.test.ts && tsx src/services/customerIdentification.test.ts"
+    "test:revenue": "tsx src/lib/revenueAndCurrency.test.ts",
+    "test": "tsx src/services/storefrontRouting.test.ts && tsx src/services/customerIdentification.test.ts && tsx src/lib/revenueAndCurrency.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

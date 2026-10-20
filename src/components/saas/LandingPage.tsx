@@ -202,14 +202,28 @@ export const LandingPage: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <button
-                  onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/30 backdrop-blur-sm transition-all cursor-pointer"
-                >
-                  <Store className="w-4 h-4 text-orange-400" />
-                  <span>Explore Demo Store</span>
-                  <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-                </button>
+                {(() => {
+                  const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+                  return (
+                    <button
+                      onClick={() => {
+                        if (!isStorefrontReady) return;
+                        openStorefrontInNewTab(activeRestaurant.slug);
+                      }}
+                      disabled={!isStorefrontReady}
+                      title={!isStorefrontReady ? 'Publish your store first' : 'Explore Demo Store'}
+                      className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 font-bold text-sm rounded-xl border border-white/30 backdrop-blur-sm transition-all ${
+                        isStorefrontReady
+                          ? 'bg-white/10 hover:bg-white/20 text-white cursor-pointer'
+                          : 'bg-white/5 opacity-50 cursor-not-allowed text-white/60'
+                      }`}
+                    >
+                      <Store className="w-4 h-4 text-orange-400" />
+                      <span>Explore Demo Store</span>
+                      <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* Trust markers */}

@@ -13,8 +13,8 @@ interface HeroStatCardProps {
 export const HeroStatCard: React.FC<HeroStatCardProps> = ({
   label,
   value,
-  badgeText = '+18.4% today',
-  metaText = 'vs. $380.00 yesterday',
+  badgeText,
+  metaText,
   onActionClick,
   className = '',
 }) => {
@@ -44,13 +44,17 @@ export const HeroStatCard: React.FC<HeroStatCardProps> = ({
         )}
       </div>
 
-      <div className="pt-4 mt-2 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-white/90">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 text-white font-bold text-[11px]">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>{badgeText}</span>
+      {(badgeText || metaText) && (
+        <div className="pt-4 mt-2 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-white/90">
+          {badgeText && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 text-white font-bold text-[11px]">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>{badgeText}</span>
+            </div>
+          )}
+          {metaText && <span className="text-white/70 text-[11px] truncate">{metaText}</span>}
         </div>
-        <span className="text-white/70 text-[11px] truncate">{metaText}</span>
-      </div>
+      )}
     </div>
   );
 };

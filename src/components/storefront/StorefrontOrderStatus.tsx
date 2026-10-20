@@ -3,6 +3,7 @@ import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { Restaurant, OrderStatus, Order } from '../../types';
 import { subscribeToOrder } from '../../services/restaurantService';
+import { formatCurrency } from '../../lib/currency';
 import {
   CheckCircle2,
   Clock,
@@ -85,7 +86,7 @@ export const StorefrontOrderStatus: React.FC<StorefrontOrderStatusProps> = ({
     },
   ];
 
-  const currency = restaurant.currency || '$';
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const normalizeStatusLevel = (status?: string): number => {
     if (!status) return 0;
@@ -285,7 +286,7 @@ export const StorefrontOrderStatus: React.FC<StorefrontOrderStatusProps> = ({
             )}
             <div className="pt-2 border-t border-black/5 flex justify-between font-bold text-sm text-[var(--text)]">
               <span>Total Paid / Due</span>
-              <span className="tabular-nums font-mono">{currency}{(order?.total || 0).toFixed(2)}</span>
+              <span className="tabular-nums font-mono">{formatCurrency(order?.total || 0, currency)}</span>
             </div>
           </div>
         </div>

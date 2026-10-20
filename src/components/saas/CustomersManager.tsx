@@ -3,6 +3,7 @@ import { useDineCraft } from '../../context/DineCraftContext';
 import { getRestaurantCustomers, RestaurantCustomerSummary } from '../../services/restaurantService';
 import { Order } from '../../types';
 import { getAvatarColor, getInitial } from '../../lib/avatarUtils';
+import { formatCurrency } from '../../lib/currency';
 import {
   Users,
   Search,
@@ -24,6 +25,7 @@ import {
 
 export const CustomersManager: React.FC = () => {
   const { activeRestaurant } = useDineCraft();
+  const currency = activeRestaurant?.ordering?.currency || activeRestaurant?.currency || '$';
   const [customers, setCustomers] = useState<RestaurantCustomerSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +117,7 @@ export const CustomersManager: React.FC = () => {
               Customer Revenue
             </p>
             <h3 className="text-2xl font-extrabold text-[#111827] mt-1 tabular-nums">
-              ${totalRevenue.toFixed(2)}
+              {formatCurrency(totalRevenue, currency)}
             </h3>
             <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">
               Gross sales
@@ -132,7 +134,7 @@ export const CustomersManager: React.FC = () => {
               Avg Order Value
             </p>
             <h3 className="text-2xl font-extrabold text-[#111827] mt-1 tabular-nums">
-              ${avgOrderValue.toFixed(2)}
+              {formatCurrency(avgOrderValue, currency)}
             </h3>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
               Per ticket
@@ -273,7 +275,7 @@ export const CustomersManager: React.FC = () => {
 
                     <td className="py-3.5 px-3">
                       <span className="font-mono font-bold text-[#111827] tabular-nums">
-                        ${c.totalSpent.toFixed(2)}
+                        {formatCurrency(c.totalSpent, currency)}
                       </span>
                     </td>
 
@@ -354,7 +356,7 @@ export const CustomersManager: React.FC = () => {
               <div className="p-3.5 rounded-2xl bg-[#F9FAFB] border border-black/5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Total Lifetime Spend</span>
                 <p className="text-lg font-extrabold text-[#FF6900] mt-0.5 tabular-nums">
-                  ${selectedCustomer.totalSpent.toFixed(2)}
+                  {formatCurrency(selectedCustomer.totalSpent, currency)}
                 </p>
               </div>
             </div>
@@ -391,7 +393,7 @@ export const CustomersManager: React.FC = () => {
                       <div className="flex items-center justify-between text-slate-500 text-[11px]">
                         <span>{order.createdAt}</span>
                         <span className="font-mono font-bold text-[#111827]">
-                          ${order.total.toFixed(2)}
+                          {formatCurrency(order.total, currency)}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600 truncate">

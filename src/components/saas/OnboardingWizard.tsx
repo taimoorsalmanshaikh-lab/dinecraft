@@ -468,7 +468,13 @@ export const OnboardingWizard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => openStorefrontInNewTab(publishedSlug)}
-                  className="w-full sm:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={!publishedSlug || !publishedSlug.trim()}
+                  title={!publishedSlug || !publishedSlug.trim() ? 'Publish your store first' : 'View My Store'}
+                  className={`w-full sm:w-auto px-6 py-3 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${
+                    publishedSlug && publishedSlug.trim()
+                      ? 'bg-orange-600 hover:bg-orange-700 text-white cursor-pointer'
+                      : 'bg-orange-600/50 text-white/80 opacity-50 cursor-not-allowed'
+                  }`}
                 >
                   <Globe className="w-4 h-4" />
                   <span>View My Store</span>

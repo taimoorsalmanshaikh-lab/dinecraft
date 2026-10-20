@@ -4,11 +4,19 @@ export type RestaurantCategory =
   | 'Pizza'
   | 'Cafe & Bistro'
   | 'Cafe'
+  | 'Café & Coffee'
   | 'Pakistani & Indian'
   | 'Pakistani Restaurant'
-  | 'Fine Dining'
+  | 'Desi & Biryani'
+  | 'Burgers & Grills'
   | 'Bakery & Sweets'
+  | 'Bakery & Desserts'
   | 'Bakery'
+  | 'Beverages & Shakes'
+  | 'Asian & Noodles'
+  | 'Healthy & Salads'
+  | 'Steakhouse'
+  | 'Fine Dining'
   | 'Other';
 
 export interface RestaurantTheme {
@@ -24,40 +32,44 @@ export interface RestaurantTheme {
 }
 
 export interface RestaurantContent {
-  heroTagline: string;
-  heroHeading: string;
-  heroHeadingHighlight: string;
-  heroSubtext: string;
-  heroPrimaryCtaText: string;
-  heroSecondaryCtaText: string;
+  heroTagline?: string;
+  heroHeading?: string;
+  heroHeadingHighlight?: string;
+  heroSubtext?: string;
+  heroMediaType?: 'image' | 'video';
+  heroVideoUrl?: string;
+  heroPrimaryCtaText?: string;
+  heroPrimaryCtaLink?: string;
+  heroSecondaryCtaText?: string;
+  heroSecondaryCtaLink?: string;
   specialOfferDealId?: string; // New field
-  featuresStrip: Array<{
+  featuresStrip?: Array<{
     icon: string;
     title: string;
     text: string;
   }>;
-  favoritesEyebrow: string;
-  favoritesTitle: string;
-  reservationBanner: {
-    enabled: boolean;
-    eyebrow: string;
-    title: string;
-    text: string;
-    buttonLabel: string;
+  favoritesEyebrow?: string;
+  favoritesTitle?: string;
+  reservationBanner?: {
+    enabled?: boolean;
+    eyebrow?: string;
+    title?: string;
+    text?: string;
+    buttonLabel?: string;
     imageUrl?: string;
-    badges: string[];
+    badges?: string[];
   };
-  stats: Array<{
+  stats?: Array<{
     icon: string;
     value: string;
     label: string;
   }>;
-  about: {
-    title: string;
-    story: string;
+  about?: {
+    title?: string;
+    story?: string;
     imageUrl?: string;
   };
-  footerText: string;
+  footerText?: string;
 }
 
 export interface RestaurantOrdering {
@@ -117,6 +129,12 @@ export interface Restaurant {
   seoDescription?: string;
   heroHeading?: string;
   heroTagline?: string;
+  heroMediaType?: 'image' | 'video';
+  heroVideoUrl?: string;
+  heroPrimaryCtaText?: string;
+  heroPrimaryCtaLink?: string;
+  heroSecondaryCtaText?: string;
+  heroSecondaryCtaLink?: string;
   aboutText?: string;
   showDealsPage?: boolean;
   showFeaturedSection?: boolean;

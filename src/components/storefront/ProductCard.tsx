@@ -3,6 +3,7 @@ import { Heart, Plus, Tag } from 'lucide-react';
 import { Deal, MenuItem, Restaurant } from '../../types';
 import { useRouter } from '../../router/RouterContext';
 import { useDineCraft } from '../../context/DineCraftContext';
+import { formatCurrency } from '../../lib/currency';
 
 interface ProductCardProps {
   item: Deal | MenuItem;
@@ -36,7 +37,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const price = deal ? deal.discountedPrice : menuItem?.price || 0;
   const originalPrice = deal ? deal.originalPrice : menuItem?.compareAtPrice;
   const isAvailable = deal ? deal.active !== false : menuItem?.available !== false;
-  const currency = restaurant.currency || '$';
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const handleClickCard = () => {
     if (onOpenProduct) {
@@ -153,11 +154,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="pt-2 px-1 flex items-center justify-between border-t border-black/5 mt-auto">
         <div className="flex items-baseline gap-1.5">
           <span className="text-xs sm:text-sm md:text-base font-extrabold text-[var(--text)] tabular-nums">
-            {currency}{price.toFixed(2)}
+            {formatCurrency(price, currency)}
           </span>
           {originalPrice && originalPrice > price && (
             <span className="text-[10px] sm:text-xs text-[var(--text-muted)] line-through tabular-nums">
-              {currency}{originalPrice.toFixed(2)}
+              {formatCurrency(originalPrice, currency)}
             </span>
           )}
         </div>

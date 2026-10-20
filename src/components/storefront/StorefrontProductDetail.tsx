@@ -23,6 +23,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { BURGER_HERO_IMAGE } from '../../data/mockData';
+import { formatCurrency } from '../../lib/currency';
 
 interface StorefrontProductDetailProps {
   restaurant: Restaurant;
@@ -32,7 +33,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const { addToCart, orders, updateOrderStatus, addToast } = useDineCraft();
-  const currency = restaurant.currency || '$';
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const [item, setItem] = useState<MenuItem | null>(null);
   const [relatedItems, setRelatedItems] = useState<MenuItem[]>([]);
@@ -453,15 +454,15 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
             {/* Price Row */}
             <div className="flex items-baseline gap-3 pt-1">
               <span className="text-3xl font-extrabold text-[var(--text)] tabular-nums">
-                {currency}{unitPrice.toFixed(2)}
+                {formatCurrency(unitPrice, currency)}
               </span>
               {item.compareAtPrice && item.compareAtPrice > item.price && (
                 <>
                   <span className="text-base text-[var(--text-muted)] line-through tabular-nums">
-                    {currency}{item.compareAtPrice.toFixed(2)}
+                    {formatCurrency(item.compareAtPrice, currency)}
                   </span>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    Save {currency}{(item.compareAtPrice - item.price).toFixed(2)}
+                    Save {formatCurrency(item.compareAtPrice - item.price, currency)}
                   </span>
                 </>
               )}
@@ -515,7 +516,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                           </div>
                           {opt.priceDelta > 0 && (
                             <span className="text-[11px] text-[var(--text-muted)] font-mono">
-                              +{currency}{opt.priceDelta.toFixed(2)}
+                              +{formatCurrency(opt.priceDelta, currency)}
                             </span>
                           )}
                         </button>
@@ -579,7 +580,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                 <ShoppingBag className="w-4 h-4" />
                 <span>{item.available ? 'Add to Bag' : 'Sold Out / Unavailable'}</span>
               </div>
-              <span className="tabular-nums font-extrabold text-sm">{currency}{totalPrice.toFixed(2)}</span>
+              <span className="tabular-nums font-extrabold text-sm">{formatCurrency(totalPrice, currency)}</span>
             </button>
           </div>
         </div>
@@ -606,7 +607,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
             </button>
           </div>
           <span className="font-extrabold text-xs sm:text-sm text-[var(--text)] tabular-nums">
-            {currency}{totalPrice.toFixed(2)}
+            {formatCurrency(totalPrice, currency)}
           </span>
         </div>
 

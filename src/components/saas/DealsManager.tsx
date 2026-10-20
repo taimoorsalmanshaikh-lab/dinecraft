@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useDineCraft } from '../../context/DineCraftContext';
 import { Deal } from '../../types';
-import { Plus, Edit2, Trash2, Tag, Sparkles, X, AlertCircle, Upload } from 'lucide-react';
+import { formatCurrency, getCurrencySymbol } from '../../lib/currency';
+import { Plus, Edit2, Trash2, Tag, Sparkles, X, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import { AssetPickerModal } from './AssetPickerModal';
 import {
   BURGER_HERO_IMAGE,
   PIZZA_IMAGE,
@@ -12,6 +14,7 @@ import {
 export const DealsManager: React.FC = () => {
   const { activeRestaurant, updateRestaurant, getDeals, addDeal, updateDeal, deleteDeal } = useDineCraft();
   const deals = getDeals(activeRestaurant.id);
+  const currency = activeRestaurant.ordering?.currency || activeRestaurant.currency || '$';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
@@ -27,23 +30,7 @@ export const DealsManager: React.FC = () => {
   const [formEndDate, setFormEndDate] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const imagePresets = [
-    { label: 'Burger Combo', url: BURGER_HERO_IMAGE },
-    { label: 'Pizza Combo', url: PIZZA_IMAGE },
-    { label: 'Biryani Platter', url: BIRYANI_IMAGE },
-    { label: 'Dinner Spread', url: RESTAURANT_INTERIOR_IMAGE },
-  ];
-
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const res = event.target?.result as string;
-      if (res) setFormImage(res);
-    };
-    reader.readAsDataURL(file);
-  };
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
 
   const openAddModal = () => {
     setEditingDeal(null);
@@ -211,10 +198,10 @@ export const DealsManager: React.FC = () => {
                       <h3 className="text-base font-bold text-slate-900">{deal.title}</h3>
                       <div className="text-right shrink-0">
                         <span className="text-base font-black text-slate-900 tabular-nums">
-                          ${deal.discountedPrice.toFixed(2)}
+                          {formatCurrency(deal.discountedPrice, currency)}
                         </span>
                         <span className="text-xs text-slate-400 line-through tabular-nums ml-2">
-                          ${deal.originalPrice.toFixed(2)}
+                          {formatCurrency(deal.originalPrice, currency)}
                         </span>
                       </div>
                     </div>
@@ -313,7 +300,9 @@ export const DealsManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Original Price ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Original Price ({getCurrencySymbol(currency)})
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -324,7 +313,9 @@ export const DealsManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Discounted Price ($)</label>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Discounted Price ({getCurrencySymbol(currency)})
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -343,40 +334,59 @@ export const DealsManager: React.FC = () => {
                 </div>
               )}
 
+              {/* Deal Photo - Select from Assets */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1.5">Deal Photo (Upload from Gallery or Preset)</label>
-                <div className="mb-2">
-                  <label className="flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/50 hover:bg-orange-50 cursor-pointer text-orange-700 font-bold text-xs transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Deal Image from Device Gallery</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageFileChange}
-                    />
-                  </label>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {imagePresets.map((img) => (
+                <label className="block font-bold text-slate-700 mb-1.5">Deal Promotional Image</label>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  {formImage ? (
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <div className="w-20 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-2xs relative">
+                        <img
+                          src={formImage}
+                          alt="Deal Preview"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="flex-1 w-full space-y-1 text-center sm:text-left">
+                        <p className="text-[11px] font-bold text-slate-700">Selected Deal Photo</p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-xs">{formImage}</p>
+                        <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setAssetPickerOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFF1E6] hover:bg-[#ffe3cc] text-[#FF6900] font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>Select from Assets</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormImage('')}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-200/70 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                     <button
-                      key={img.label}
                       type="button"
-                      onClick={() => setFormImage(img.url)}
-                      className={`relative aspect-4/3 rounded-lg overflow-hidden border transition-all ${
-                        formImage === img.url
-                          ? 'border-2 border-orange-600 ring-2 ring-orange-200'
-                          : 'border-slate-200 opacity-60 hover:opacity-100'
-                      }`}
+                      onClick={() => setAssetPickerOpen(true)}
+                      className="w-full py-4 px-4 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/40 hover:bg-orange-50/80 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
                     >
-                      <img
-                        src={img.url}
-                        alt={img.label}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
+                      <div className="w-9 h-9 rounded-full bg-[#FFF1E6] text-[#FF6900] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                        <ImageIcon className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-[#FF6900]">
+                        Select Photo from Assets
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        Choose from media library or upload new with live progress
+                      </span>
                     </button>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -451,6 +461,16 @@ export const DealsManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Asset Picker Modal */}
+      <AssetPickerModal
+        isOpen={assetPickerOpen}
+        onClose={() => setAssetPickerOpen(false)}
+        onSelect={(url) => setFormImage(url)}
+        restaurantId={activeRestaurant.id}
+        title="Select Deal Image from Assets"
+        currentSelectedUrl={formImage}
+      />
     </div>
   );
 };

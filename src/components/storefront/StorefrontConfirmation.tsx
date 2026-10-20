@@ -10,6 +10,7 @@ import {
   ChefHat,
   Bike,
   Check,
+  Copy,
 } from 'lucide-react';
 
 import { subscribeToOrder } from '../../services/restaurantService';
@@ -28,6 +29,8 @@ export const StorefrontConfirmation: React.FC<StorefrontConfirmationProps> = ({
   const { navigate } = useRouter();
   const { orders } = useDineCraft();
   const [liveOrder, setLiveOrder] = useState<Order | null>(null);
+
+  const [copiedRef, setCopiedRef] = useState(false);
 
   const effectiveOrderId =
     propOrderId ||

@@ -3,6 +3,7 @@ import { useRouter } from '../../router/RouterContext';
 import { Restaurant, Order, OrderStatus } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { mapOrderFromRow } from '../../services/restaurantService';
+import { formatCurrency } from '../../lib/currency';
 import {
   Clock,
   ChefHat,
@@ -24,7 +25,7 @@ export const StorefrontOrders: React.FC<StorefrontOrdersProps> = ({ restaurant }
   const { navigate } = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const currency = restaurant.currency || '$';
+  const currency = restaurant.currency || restaurant.ordering?.currency || 'USD';
 
   const fetchCustomerOrders = async () => {
     try {
@@ -269,7 +270,7 @@ export const StorefrontOrders: React.FC<StorefrontOrdersProps> = ({ restaurant }
                     {it.quantity}x {it.name}
                   </span>
                   <span className="font-mono text-[var(--text-muted)] tabular-nums">
-                    {currency}{(it.price * it.quantity).toFixed(2)}
+                    {formatCurrency(it.price * it.quantity, currency)}
                   </span>
                 </div>
               ))}
@@ -282,7 +283,7 @@ export const StorefrontOrders: React.FC<StorefrontOrdersProps> = ({ restaurant }
                   {order.fulfilmentType}
                 </span>
                 <span className="font-black text-sm text-[var(--text)] tabular-nums">
-                  Total: {currency}{order.total.toFixed(2)}
+                  Total: {formatCurrency(order.total, currency)}
                 </span>
               </div>
 

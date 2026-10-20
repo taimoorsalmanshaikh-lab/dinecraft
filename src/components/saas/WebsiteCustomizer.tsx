@@ -18,6 +18,8 @@ import {
   Clock,
   MapPin,
   Image as ImageIcon,
+  Film,
+  Play,
 } from 'lucide-react';
 import { AssetPickerModal } from './AssetPickerModal';
 import { openStorefrontInNewTab } from '../../lib/subdomain';
@@ -37,7 +39,7 @@ export const WebsiteCustomizer: React.FC = () => {
   // Working draft state initialized from activeRestaurant
   const [draft, setDraft] = useState({ ...activeRestaurant });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [assetPickerTarget, setAssetPickerTarget] = useState<'logo' | 'banner' | 'plate' | null>(null);
+  const [assetPickerTarget, setAssetPickerTarget] = useState<'logo' | 'banner' | 'video' | 'plate' | 'promo' | null>(null);
 
   // Sync draft when activeRestaurant changes and not dirty
   useEffect(() => {
@@ -59,38 +61,36 @@ export const WebsiteCustomizer: React.FC = () => {
     { label: 'Midnight Navy', hex: '#0F172A' },
   ];
 
-  const bannerPresets = [
-    { label: 'Gourmet Burger Kitchen', url: BURGER_HERO_IMAGE },
-    { label: 'Artisan Wood-Fired Pizza', url: PIZZA_IMAGE },
-    { label: 'Traditional Desi & Biryani', url: BIRYANI_IMAGE },
-    { label: 'Dining Bistro Atmosphere', url: RESTAURANT_INTERIOR_IMAGE },
-  ];
-
   const updateDraft = (fields: Partial<typeof draft>) => {
     setDraft((prev) => ({ ...prev, ...fields }));
     setHasUnsavedChanges(true);
   };
 
-  const handleImageFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    onImageSelected: (url: string) => void
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const res = event.target?.result as string;
-      if (res) onImageSelected(res);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSave = () => {
-    // Ensure contact fields and root fields remain in perfect sync
+    // Ensure contact fields, hero media, and root fields remain in perfect sync
     const finalDraft = {
       ...draft,
       logoUrl: draft.logo || draft.logoUrl,
       bannerUrl: draft.banner || draft.bannerUrl,
+      heroHeading: draft.heroHeading || draft.content?.heroHeading,
+      heroTagline: draft.heroTagline || draft.content?.heroTagline,
+      heroMediaType: draft.heroMediaType || draft.content?.heroMediaType || 'image',
+      heroVideoUrl: draft.heroVideoUrl || draft.content?.heroVideoUrl || '',
+      heroPrimaryCtaText: draft.heroPrimaryCtaText || draft.content?.heroPrimaryCtaText || 'Order Online Now',
+      heroPrimaryCtaLink: draft.heroPrimaryCtaLink || draft.content?.heroPrimaryCtaLink || `/${draft.slug}/menu`,
+      heroSecondaryCtaText: draft.heroSecondaryCtaText || draft.content?.heroSecondaryCtaText || 'View Hot Deals',
+      heroSecondaryCtaLink: draft.heroSecondaryCtaLink || draft.content?.heroSecondaryCtaLink || '#deals-section',
+      content: {
+        ...(draft.content || {}),
+        heroHeading: draft.heroHeading || draft.content?.heroHeading,
+        heroTagline: draft.heroTagline || draft.content?.heroTagline,
+        heroMediaType: draft.heroMediaType || draft.content?.heroMediaType || 'image',
+        heroVideoUrl: draft.heroVideoUrl || draft.content?.heroVideoUrl || '',
+        heroPrimaryCtaText: draft.heroPrimaryCtaText || draft.content?.heroPrimaryCtaText || 'Order Online Now',
+        heroPrimaryCtaLink: draft.heroPrimaryCtaLink || draft.content?.heroPrimaryCtaLink || `/${draft.slug}/menu`,
+        heroSecondaryCtaText: draft.heroSecondaryCtaText || draft.content?.heroSecondaryCtaText || 'View Hot Deals',
+        heroSecondaryCtaLink: draft.heroSecondaryCtaLink || draft.content?.heroSecondaryCtaLink || '#deals-section',
+      },
       contact: {
         ...(draft.contact || {}),
         phone: draft.phone || draft.contact?.phone || '',
@@ -119,6 +119,25 @@ export const WebsiteCustomizer: React.FC = () => {
       status: 'published' as const,
       logoUrl: draft.logo || draft.logoUrl,
       bannerUrl: draft.banner || draft.bannerUrl,
+      heroHeading: draft.heroHeading || draft.content?.heroHeading,
+      heroTagline: draft.heroTagline || draft.content?.heroTagline,
+      heroMediaType: draft.heroMediaType || draft.content?.heroMediaType || 'image',
+      heroVideoUrl: draft.heroVideoUrl || draft.content?.heroVideoUrl || '',
+      heroPrimaryCtaText: draft.heroPrimaryCtaText || draft.content?.heroPrimaryCtaText || 'Order Online Now',
+      heroPrimaryCtaLink: draft.heroPrimaryCtaLink || draft.content?.heroPrimaryCtaLink || `/${draft.slug}/menu`,
+      heroSecondaryCtaText: draft.heroSecondaryCtaText || draft.content?.heroSecondaryCtaText || 'View Hot Deals',
+      heroSecondaryCtaLink: draft.heroSecondaryCtaLink || draft.content?.heroSecondaryCtaLink || '#deals-section',
+      content: {
+        ...(draft.content || {}),
+        heroHeading: draft.heroHeading || draft.content?.heroHeading,
+        heroTagline: draft.heroTagline || draft.content?.heroTagline,
+        heroMediaType: draft.heroMediaType || draft.content?.heroMediaType || 'image',
+        heroVideoUrl: draft.heroVideoUrl || draft.content?.heroVideoUrl || '',
+        heroPrimaryCtaText: draft.heroPrimaryCtaText || draft.content?.heroPrimaryCtaText || 'Order Online Now',
+        heroPrimaryCtaLink: draft.heroPrimaryCtaLink || draft.content?.heroPrimaryCtaLink || `/${draft.slug}/menu`,
+        heroSecondaryCtaText: draft.heroSecondaryCtaText || draft.content?.heroSecondaryCtaText || 'View Hot Deals',
+        heroSecondaryCtaLink: draft.heroSecondaryCtaLink || draft.content?.heroSecondaryCtaLink || '#deals-section',
+      },
       contact: {
         ...(draft.contact || {}),
         phone: draft.phone || draft.contact?.phone || '',
@@ -231,13 +250,26 @@ export const WebsiteCustomizer: React.FC = () => {
             <span>Publish Changes</span>
           </button>
 
-          <button
-            onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
-            className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Open storefront in full page (new tab)"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </button>
+          {(() => {
+            const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+            return (
+              <button
+                onClick={() => {
+                  if (!isStorefrontReady) return;
+                  openStorefrontInNewTab(activeRestaurant.slug);
+                }}
+                disabled={!isStorefrontReady}
+                className={`p-2 rounded-lg transition-colors ${
+                  isStorefrontReady
+                    ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed text-slate-300'
+                }`}
+                title={!isStorefrontReady ? 'Publish your store first' : 'Open storefront in full page (new tab)'}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            );
+          })()}
         </div>
       </div>
 
@@ -291,17 +323,15 @@ export const WebsiteCustomizer: React.FC = () => {
                       <ImageIcon className="w-3.5 h-3.5 text-orange-600" />
                       <span>Select from Assets</span>
                     </button>
-
-                    <label className="flex-1 flex items-center justify-center gap-1.5 p-2 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/50 hover:bg-orange-50 cursor-pointer text-orange-700 font-bold text-[11px] transition-colors">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleImageFileChange(e, (url) => updateDraft({ logo: url, logoUrl: url }))}
-                      />
-                    </label>
+                    {draft.logo && (
+                      <button
+                        type="button"
+                        onClick={() => updateDraft({ logo: '🍽️', logoUrl: '' })}
+                        className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-[11px] transition-colors cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -397,14 +427,15 @@ export const WebsiteCustomizer: React.FC = () => {
 
           {/* TAB 2: Hero Section */}
           {activeTab === 'hero' && (
-            <div className="space-y-5 text-xs">
+            <div className="space-y-6 text-xs">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 mb-1">Hero Section</h3>
                 <p className="text-slate-500 text-[11px]">
-                  Customize your main storefront banner, headline, and supporting tagline.
+                  Configure your full-screen storefront hero banner, video or image backgrounds, and call-to-action buttons.
                 </p>
               </div>
 
+              {/* Main Headline */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
                   Main Headline
@@ -418,6 +449,7 @@ export const WebsiteCustomizer: React.FC = () => {
                 />
               </div>
 
+              {/* Supporting Tagline */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
                   Supporting Description / Tagline
@@ -431,57 +463,230 @@ export const WebsiteCustomizer: React.FC = () => {
                 />
               </div>
 
-              {/* Banner Upload */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-2">
-                  Hero Banner Photo
+              {/* Media Type Switcher: Image vs Video */}
+              <div className="space-y-2">
+                <label className="block font-bold text-slate-700">
+                  Hero Background Media Type
                 </label>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
                   <button
                     type="button"
-                    onClick={() => setAssetPickerTarget('banner')}
-                    className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs transition-colors shadow-2xs cursor-pointer"
+                    onClick={() => updateDraft({ heroMediaType: 'image' })}
+                    className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+                      draft.heroMediaType !== 'video'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
-                    <ImageIcon className="w-4 h-4 text-orange-600" />
-                    <span>Select from Assets</span>
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Background Image</span>
                   </button>
-
-                  <label className="flex-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/50 hover:bg-orange-50 cursor-pointer text-orange-700 font-bold text-xs transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span>Upload File</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageFileChange(e, (url) => updateDraft({ banner: url, bannerUrl: url }))}
-                    />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => updateDraft({ heroMediaType: 'video' })}
+                    className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+                      draft.heroMediaType === 'video'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Film className="w-4 h-4" />
+                    <span>Background Video</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {bannerPresets.map((b) => (
-                    <button
-                      key={b.label}
-                      type="button"
-                      onClick={() => updateDraft({ banner: b.url, bannerUrl: b.url })}
-                      className={`rounded-xl border overflow-hidden text-left transition-all cursor-pointer ${
-                        draft.banner === b.url || draft.bannerUrl === b.url
-                          ? 'border-2 border-orange-600 ring-2 ring-orange-100 shadow-2xs'
-                          : 'border-slate-200 opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <div className="aspect-16/10 bg-slate-100">
-                        <img
-                          src={b.url}
-                          alt={b.label}
+              </div>
+
+              {/* If Video Mode Selected */}
+              {draft.heroMediaType === 'video' ? (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <Film className="w-4 h-4 text-[#FF6900]" />
+                      <span>Hero Background Video</span>
+                    </span>
+                    <span className="text-[10px] bg-orange-100 text-[#FF6900] px-2 py-0.5 rounded-full font-bold">
+                      Cinematic Mode
+                    </span>
+                  </div>
+
+                  {draft.heroVideoUrl ? (
+                    <div className="space-y-2">
+                      <div className="aspect-16/9 rounded-xl overflow-hidden bg-slate-950 border border-slate-200 relative">
+                        <video
+                          src={draft.heroVideoUrl}
+                          controls
+                          muted
+                          playsInline
                           className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
                         />
                       </div>
-                      <p className="p-1.5 text-[10px] font-semibold text-slate-800 truncate">
-                        {b.label}
-                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAssetPickerTarget('video')}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FFF1E6] hover:bg-[#ffe3cc] text-[#FF6900] font-bold text-xs transition-colors cursor-pointer"
+                        >
+                          <Film className="w-3.5 h-3.5" />
+                          <span>Change Video from Assets</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateDraft({ heroVideoUrl: '' })}
+                          className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold transition-colors cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setAssetPickerTarget('video')}
+                      className="w-full py-5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/40 hover:bg-orange-50/80 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-[#FFF1E6] text-[#FF6900] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                        <Film className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-[#FF6900]">
+                        Select Background Video from Assets
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Supports MP4, WebM (up to 50MB in Supabase Storage)
+                      </span>
                     </button>
-                  ))}
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Direct Video URL
+                    </label>
+                    <input
+                      type="url"
+                      value={draft.heroVideoUrl || ''}
+                      onChange={(e) => updateDraft({ heroVideoUrl: e.target.value })}
+                      placeholder="https://.../video.mp4"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                    />
+                  </div>
+
+                  {/* Fallback Poster Image */}
+                  <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
+                    <label className="block text-[11px] font-bold text-slate-600">
+                      Fallback Poster Image (shown while video loads or on mobile)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={draft.banner || draft.bannerUrl || ''}
+                        onChange={(e) => updateDraft({ banner: e.target.value, bannerUrl: e.target.value })}
+                        placeholder="Fallback image URL"
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setAssetPickerTarget('banner')}
+                        className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold text-xs cursor-pointer"
+                      >
+                        Browse
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Image Mode Selected */
+                <div>
+                  <label className="block font-bold text-slate-700 mb-2">
+                    Hero Banner Photo
+                  </label>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                    {draft.banner || draft.bannerUrl ? (
+                      <div className="space-y-2">
+                        <div className="aspect-16/9 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+                          <img
+                            src={draft.banner || draft.bannerUrl}
+                            alt="Hero banner"
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setAssetPickerTarget('banner')}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FFF1E6] hover:bg-[#ffe3cc] text-[#FF6900] font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>Change Banner from Assets</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setAssetPickerTarget('banner')}
+                        className="w-full py-5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/40 hover:bg-orange-50/80 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-[#FFF1E6] text-[#FF6900] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-[#FF6900]">
+                          Select Hero Banner from Assets
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Choose from library or upload new with live progress
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Call to Action Buttons Configuration */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <h4 className="font-bold text-slate-800 text-xs">
+                  Call to Action (CTA) Buttons
+                </h4>
+
+                {/* Primary Button */}
+                <div className="space-y-1.5">
+                  <span className="font-bold text-slate-700 block text-[11px]">Primary Button</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={draft.heroPrimaryCtaText || 'Order Online Now'}
+                      onChange={(e) => updateDraft({ heroPrimaryCtaText: e.target.value })}
+                      placeholder="Button text (e.g. Order Online Now)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={draft.heroPrimaryCtaLink || `/${draft.slug}/menu`}
+                      onChange={(e) => updateDraft({ heroPrimaryCtaLink: e.target.value })}
+                      placeholder="Destination URL (e.g. /menu)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Secondary Button */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-200/60">
+                  <span className="font-bold text-slate-700 block text-[11px]">Secondary Button</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={draft.heroSecondaryCtaText || 'View Hot Deals'}
+                      onChange={(e) => updateDraft({ heroSecondaryCtaText: e.target.value })}
+                      placeholder="Button text (e.g. View Hot Deals)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                    />
+                    <input
+                      type="text"
+                      value={draft.heroSecondaryCtaLink || '#deals-section'}
+                      onChange={(e) => updateDraft({ heroSecondaryCtaLink: e.target.value })}
+                      placeholder="Destination URL (e.g. #deals-section)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -645,36 +850,73 @@ export const WebsiteCustomizer: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 mb-1.5">
                   Promotional Banner Image
                 </label>
-                <label className="flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/50 hover:bg-orange-50 cursor-pointer text-orange-700 font-bold text-xs transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Promo Image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageFileChange(e, (url) => {
-                      updateDraft({
-                        content: {
-                          ...(draft.content || {} as any),
-                          reservationBanner: {
-                            ...(draft.content?.reservationBanner || {
-                              enabled: true,
-                              eyebrow: 'Special Limited Offer',
-                              title: 'Get 20% Off Your First Online Order',
-                              text: 'Order directly from our kitchen today.',
-                              buttonLabel: 'Claim Offer & Order Now',
-                              badges: [],
-                            }),
-                            imageUrl: url,
-                          },
-                        },
-                      });
-                    })}
-                  />
-                </label>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  {draft.content?.reservationBanner?.imageUrl ? (
+                    <div className="space-y-2">
+                      <div className="aspect-16/10 max-h-36 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
+                        <img
+                          src={draft.content.reservationBanner.imageUrl}
+                          alt="Promo banner"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAssetPickerTarget('promo')}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FFF1E6] hover:bg-[#ffe3cc] text-[#FF6900] font-bold text-xs transition-colors cursor-pointer"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Change from Assets</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateDraft({
+                              content: {
+                                ...(draft.content || {} as any),
+                                reservationBanner: {
+                                  ...(draft.content?.reservationBanner || {
+                                    enabled: true,
+                                    eyebrow: 'Special Limited Offer',
+                                    title: 'Get 20% Off Your First Online Order',
+                                    text: 'Order directly from our kitchen today.',
+                                    buttonLabel: 'Claim Offer & Order Now',
+                                    badges: [],
+                                  }),
+                                  imageUrl: undefined,
+                                },
+                              },
+                            });
+                          }}
+                          className="px-2.5 py-2 rounded-xl bg-slate-200/70 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition-colors cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setAssetPickerTarget('promo')}
+                      className="w-full py-4 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50/40 hover:bg-orange-50/80 transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#FFF1E6] text-[#FF6900] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                        <ImageIcon className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-[#FF6900]">
+                        Select Promo Image from Assets
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Choose from library or upload new with live progress
+                      </span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -841,8 +1083,35 @@ export const WebsiteCustomizer: React.FC = () => {
             updateDraft({ logo: url, logoUrl: url });
           } else if (assetPickerTarget === 'banner') {
             updateDraft({ banner: url, bannerUrl: url });
+          } else if (assetPickerTarget === 'video') {
+            updateDraft({
+              heroMediaType: 'video',
+              heroVideoUrl: url,
+              content: {
+                ...(draft.content || {} as any),
+                heroMediaType: 'video',
+                heroVideoUrl: url,
+              },
+            });
           } else if (assetPickerTarget === 'plate') {
             updateDraft({ plateImageUrl: url });
+          } else if (assetPickerTarget === 'promo') {
+            updateDraft({
+              content: {
+                ...(draft.content || {} as any),
+                reservationBanner: {
+                  ...(draft.content?.reservationBanner || {
+                    enabled: true,
+                    eyebrow: 'Special Limited Offer',
+                    title: 'Get 20% Off Your First Online Order',
+                    text: 'Order directly from our kitchen today.',
+                    buttonLabel: 'Claim Offer & Order Now',
+                    badges: [],
+                  }),
+                  imageUrl: url,
+                },
+              },
+            });
           }
           setAssetPickerTarget(null);
         }}
@@ -852,6 +1121,10 @@ export const WebsiteCustomizer: React.FC = () => {
             ? 'Select Brand Logo from Assets'
             : assetPickerTarget === 'plate'
             ? 'Select Featured Dish Plate from Assets'
+            : assetPickerTarget === 'promo'
+            ? 'Select Promotional Offer Banner from Assets'
+            : assetPickerTarget === 'video'
+            ? 'Select Background Video from Assets'
             : 'Select Hero Banner from Assets'
         }
         currentSelectedUrl={
@@ -859,6 +1132,10 @@ export const WebsiteCustomizer: React.FC = () => {
             ? draft.logo
             : assetPickerTarget === 'plate'
             ? draft.plateImageUrl
+            : assetPickerTarget === 'promo'
+            ? draft.content?.reservationBanner?.imageUrl
+            : assetPickerTarget === 'video'
+            ? draft.heroVideoUrl
             : draft.banner
         }
       />

@@ -25,6 +25,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { navigate } = useRouter();
   const { restaurants, activeRestaurant, setActiveRestaurantId, updateRestaurant, addToast } = useDineCraft();
   const [showRestoDropdown, setShowRestoDropdown] = useState(false);
+  const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
 
   const togglePublish = () => {
     const newStatus = activeRestaurant.websiteStatus === 'published' ? 'draft' : 'published';
@@ -126,8 +127,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Share/Copy link */}
           <button
             onClick={copyStorefrontLink}
-            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors"
-            title="Copy public storefront link"
+            disabled={!isStorefrontReady}
+            className={`p-2 rounded-lg border border-slate-200 transition-colors ${
+              isStorefrontReady
+                ? 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer'
+                : 'opacity-50 cursor-not-allowed text-slate-400'
+            }`}
+            title={!isStorefrontReady ? 'Publish your store first' : 'Copy public storefront link'}
           >
             <Share2 className="w-4 h-4" />
           </button>
@@ -148,7 +154,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* View Website Button */}
           <button
             onClick={() => openStorefrontInNewTab(activeRestaurant.slug)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-all whitespace-nowrap cursor-pointer"
+            disabled={!isStorefrontReady}
+            title={!isStorefrontReady ? 'Publish your store first' : 'View Storefront'}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm transition-all whitespace-nowrap ${
+              isStorefrontReady
+                ? 'text-white bg-orange-600 hover:bg-orange-700 cursor-pointer'
+                : 'text-white/80 bg-orange-600/50 opacity-50 cursor-not-allowed'
+            }`}
           >
             <Globe className="w-3.5 h-3.5" />
             <span className="hidden xs:inline">View Storefront</span>

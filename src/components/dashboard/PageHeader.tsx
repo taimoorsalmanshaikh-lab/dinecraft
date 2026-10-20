@@ -20,12 +20,16 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ currentSubpage }) => {
     day: 'numeric',
   }).format(new Date());
 
+  const isStorefrontReady = Boolean(activeRestaurant?.slug && activeRestaurant.websiteStatus === 'published');
+
   const getActionConfig = () => {
     switch (currentSubpage) {
       case 'menu':
         return {
           label: 'Add Menu Item',
           icon: <Plus className="w-4 h-4" />,
+          disabled: false,
+          title: undefined,
           onClick: () => {
             const btn = document.getElementById('open-add-dish-btn');
             if (btn) btn.click();
@@ -36,6 +40,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ currentSubpage }) => {
         return {
           label: 'Create New Deal',
           icon: <Tag className="w-4 h-4" />,
+          disabled: false,
+          title: undefined,
           onClick: () => {
             const btn = document.getElementById('open-add-deal-btn');
             if (btn) btn.click();
@@ -46,25 +52,42 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ currentSubpage }) => {
         return {
           label: 'View Storefront',
           icon: <Globe className="w-4 h-4" />,
-          onClick: () => openStorefrontInNewTab(activeRestaurant.slug),
+          disabled: !isStorefrontReady,
+          title: !isStorefrontReady ? 'Publish your store first' : undefined,
+          onClick: () => {
+            if (!isStorefrontReady) return;
+            openStorefrontInNewTab(activeRestaurant.slug);
+          },
         };
       case 'website':
         return {
           label: 'Live Preview',
           icon: <Sparkles className="w-4 h-4" />,
-          onClick: () => openStorefrontInNewTab(activeRestaurant.slug),
+          disabled: !isStorefrontReady,
+          title: !isStorefrontReady ? 'Publish your store first' : undefined,
+          onClick: () => {
+            if (!isStorefrontReady) return;
+            openStorefrontInNewTab(activeRestaurant.slug);
+          },
         };
       case 'reviews':
         return {
           label: 'Public Reviews',
           icon: <Globe className="w-4 h-4" />,
-          onClick: () => openStorefrontInNewTab(activeRestaurant.slug, 'reviews'),
+          disabled: !isStorefrontReady,
+          title: !isStorefrontReady ? 'Publish your store first' : undefined,
+          onClick: () => {
+            if (!isStorefrontReady) return;
+            openStorefrontInNewTab(activeRestaurant.slug, 'reviews');
+          },
         };
       case 'overview':
       default:
         return {
           label: 'Add Menu Item',
           icon: <Plus className="w-4 h-4" />,
+          disabled: false,
+          title: undefined,
           onClick: () => navigate('/dashboard/menu'),
         };
     }
@@ -97,7 +120,13 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ currentSubpage }) => {
         <button
           type="button"
           onClick={action.onClick}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#FF6900] hover:bg-[#E65F00] text-white text-xs font-bold shadow-[0_1px_2px_rgba(255,105,0,0.2),0_4px_12px_rgba(255,105,0,0.24)] transition-all cursor-pointer active:scale-98"
+          disabled={action.disabled}
+          title={action.title}
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold shadow-[0_1px_2px_rgba(255,105,0,0.2),0_4px_12px_rgba(255,105,0,0.24)] transition-all ${
+            action.disabled
+              ? 'bg-[#FF6900]/50 opacity-50 cursor-not-allowed'
+              : 'bg-[#FF6900] hover:bg-[#E65F00] cursor-pointer active:scale-98'
+          }`}
         >
           {action.icon}
           <span>{action.label}</span>

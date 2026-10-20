@@ -27,24 +27,33 @@ export function getCurrentUser(): User | null {
 }
 
 export function subscribeToAuthState(callback: AuthStateCallback): () => void {
-  // 1. Initial check from active Supabase session
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    const user = mapSupabaseUser(session?.user);
+  let cancelled = false;
+  const emit = (user: User | null) => {
     cachedUser = user;
-    callback(user);
-  }).catch((err) => {
-    console.warn('[Supabase Auth] Get session error:', err);
-    callback(null);
-  });
+    if (!cancelled) callback(user);
+  };
 
-  // 2. Subscribe to auth state events
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  // 1. Initial check from active Supabase session
+  supabase.auth
+    .getSession()
+    .then(({ data: { session } }) => emit(mapSupabaseUser(session?.user)))
+    .catch((err) => {
+      console.warn('[Supabase Auth] Get session error:', err);
+      emit(null);
+    });
+
+  // 2. Subscribe to auth state events.
+  // IMPORTANT: never await other Supabase calls inside this callback (supabase-js holds an
+  // internal auth lock while it runs -> deadlock). Defer the work to the next tick instead.
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
     const user = mapSupabaseUser(session?.user);
-    cachedUser = user;
-    callback(user);
+    setTimeout(() => emit(user), 0);
   });
 
   return () => {
+    cancelled = true;
     subscription.unsubscribe();
   };
 }
